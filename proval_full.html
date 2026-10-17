@@ -1,0 +1,1713 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Провал — полная история · 1.0</title>
+<style>
+html,body{margin:0;height:100%;background:#050505;color:#d2cbbb;font-family:"Courier New",Courier,monospace;overflow:hidden}
+#wrap{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+#stage{position:relative;width:min(100vw,calc(100vh * 16 / 9));aspect-ratio:16/9;background:#000}
+canvas{width:100%;height:100%;display:block;image-rendering:pixelated;image-rendering:crisp-edges}
+#hud{position:absolute;inset:0;pointer-events:none;font-size:clamp(11px,2vw,24px)}
+#line{position:absolute;left:7%;right:7%;bottom:6%;text-align:center;line-height:1.35;text-shadow:0 0 6px #000,0 2px 0 #000;opacity:0;transition:opacity .35s}
+#line.stor{color:#d23a2e;letter-spacing:.1em;text-transform:uppercase;animation:tw .12s steps(2) infinite}
+@keyframes tw{0%{transform:translate(0,0)}50%{transform:translate(2px,-1px)}100%{transform:translate(-2px,1px)}}
+@media (prefers-reduced-motion:reduce){#line.stor{animation:none}}
+#prompt{position:absolute;left:0;right:0;bottom:22%;text-align:center;font-size:.8em;opacity:0;color:#e8dfc8;text-shadow:0 0 4px #000}
+#cross{position:absolute;left:50%;top:50%;width:4px;height:4px;margin:-2px;background:#e8dfc8;opacity:.5;border-radius:50%}
+#count{position:absolute;left:2%;top:2.5%;font-size:.65em;opacity:.5}
+#hint{position:absolute;left:0;right:0;top:3%;text-align:center;font-size:.65em;opacity:.7;display:none}
+#overlay{position:fixed;inset:0;background:rgba(0,0,0,.96);display:flex;align-items:center;justify-content:center;text-align:center;padding:4%;box-sizing:border-box;z-index:10}
+#panel{max-width:660px}
+#panel h1{letter-spacing:.35em;font-size:34px;margin:0 0 4px;color:#b8352c}
+#panel h2{font-weight:normal;font-size:15px;margin:0 0 22px;opacity:.7}
+#warn{border:1px solid #5a2a26;padding:12px 16px;font-size:14px;line-height:1.5;text-align:left;margin-bottom:16px}
+#keys{font-size:13px;opacity:.75;line-height:1.7;margin-bottom:18px}
+#panel label{display:block;font-size:14px;margin-bottom:18px;cursor:pointer}
+#start{font:inherit;font-size:16px;letter-spacing:.2em;color:#d2cbbb;background:#1a0c0b;border:1px solid #8a2f28;padding:10px 34px;cursor:pointer}
+#start:hover{background:#2a1210}
+
+#overlay{overflow:auto;background:radial-gradient(ellipse at 75% 20%,#24251cd9, #090c0cf8 65%);padding:32px 24px;text-align:left}
+#panel{width:620px;max-width:100%;margin:auto}#panel h1{font-size:clamp(38px,8vw,68px);letter-spacing:.24em;color:#c7c3ac;margin:12px 0}#panel h2{font-size:16px;color:#a9af9c;opacity:1;margin-bottom:20px}
+.eyebrow{font-size:12px;letter-spacing:.18em;color:#9da88c}.intro{font-size:20px;line-height:1.5;color:#d8d5c6}
+#warn{font-size:14px;line-height:1.5;background:#141813;border-color:#45483c;color:#c6c4b4}#keys{font-size:14px;opacity:1;color:#b8baab;margin:16px 0;line-height:1.65}
+.settings{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;margin:20px 0}#panel label{font-size:14px;line-height:1.5;margin:0;min-height:44px}input[type=range]{display:block;width:100%;accent-color:#a5ae83}input[type=checkbox]{accent-color:#a5ae83}output{color:#b9c69b;font-size:12px}
+button{font-family:inherit;min-height:44px;cursor:pointer}button:focus-visible,input:focus-visible{outline:2px solid #d8dbb3;outline-offset:4px}
+#start,#continue,#restart{background:#262d22;border:1px solid #8e9a72;color:#e3e5d1;padding:14px 24px;font-size:15px;letter-spacing:.12em}#start:hover,#continue:hover,#restart:hover{background:#394330}.foot{font-size:12px;color:#a6aa98;line-height:1.6}
+#menuBtn{position:absolute;right:2%;top:2%;pointer-events:auto;background:#0c100cce;color:#d2d6c0;border:1px solid #50583e;padding:8px 12px;font-size:12px}#count{font-size:12px;opacity:1;color:#d3d6c6;background:#0b100bbb;padding:9px}#objective{position:absolute;left:2%;top:12%;font-size:14px;color:#d4dac5;text-shadow:0 2px #000;max-width:65%}#line{background:#090c0bd9;padding:14px 20px;font-size:clamp(14px,1.65vw,22px);border-left:2px solid #818d69;text-align:left;left:10%;right:10%;bottom:5%}#line.stor{color:#d7a994;animation:none;text-transform:none;letter-spacing:0}#prompt{bottom:26%;font-size:clamp(14px,1.4vw,18px)}#hint{top:20%;bottom:auto;left:2%;right:2%;text-align:left;font-size:12px;background:#0b100be6;color:#d2d8c5;opacity:1;padding:4px 0}
+#endPanel{position:fixed;inset:0;z-index:12;background:#090d0df5;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;text-align:center}#endPanel[hidden]{display:none}#endPanel p{line-height:1.7;color:#c9cebb}#endPanel button{margin:8px}#endPanel h2{font-size:36px;font-weight:normal}
+@media(max-width:600px){#overlay{padding:24px 16px}.settings{grid-template-columns:1fr}#panel h1{font-size:40px}#objective{top:22%;font-size:12px}#count{max-width:40%;font-size:10px}#menuBtn{font-size:10px}#line{left:3%;right:3%;padding:10px}#hint{display:none!important}}
+
+#line{bottom:6%;left:9%;right:9%;border-left:3px solid #9ca782;background:linear-gradient(100deg,#0a100ff5,#0a100fea);padding:16px 22px;transition:opacity .2s;box-sizing:border-box}
+#speaker{font-size:12px;color:#b7c6a0;letter-spacing:.14em;line-height:1.6;margin-bottom:8px;font-weight:bold}
+#spoken{font-size:clamp(18px,1.85vw,26px);line-height:1.5;min-height:3em;white-space:pre-wrap;color:#e0e1d0;overflow-wrap:anywhere}
+#dialogHint{font-size:12px;line-height:1.6;color:#b1b9a8;margin-top:10px}
+#line.stor{border-left-color:#aa716a;background:linear-gradient(100deg,#190e11f5,#0a100fea)}
+#line.stor #speaker{color:#dfa697}#line.stor #spoken{color:#e6bcb1;letter-spacing:.035em}
+#line.phone{border-left-color:#7e9ba0}#line.phone #speaker{color:#b6d0d1}
+#caret{color:#a1b48e;opacity:.8}#line.stor #caret{color:#d3a096}
+#prompt{bottom:36%}#hint{top:20%;bottom:auto}#line[style*="opacity: 0"]{pointer-events:none}
+@media(max-width:600px){#line{left:3%;right:3%;bottom:4%;padding:12px}#spoken{font-size:16px;min-height:3em}#speaker,#dialogHint{font-size:11px}#prompt{bottom:48%}}
+
+#skipIntro{background:#111914;color:#d1d7c1;border:1px solid #748264;min-height:47px;padding:12px 18px;letter-spacing:.07em;margin:8px 0;font:inherit;font-size:13px}#skipIntro:hover{background:#263325}
+#carryStatus{position:absolute;right:2%;top:12%;font-size:13px;color:#d9ddc6;background:#0b110cce;padding:8px;max-width:32%;text-align:right}
+#carryStatus:empty{display:none}#holdUI{position:absolute;left:50%;top:54%;transform:translateX(-50%);text-align:center;background:#071009dd;padding:12px 20px;border:1px solid #69745c;color:#e2e5d6;font-size:14px;min-width:190px}#holdUI[hidden]{display:none}#holdUI svg{width:58px;height:58px;display:block;margin:0 auto 8px}#holdLabel{line-height:1.5}
+#objective{max-width:62%;line-height:1.5;background:#0b110bbf;padding:7px 10px;box-sizing:border-box}
+#hint{max-width:70%;background:#0b110bbb}#prompt{background:#0b110bd9;left:20%;right:20%;padding:8px;box-sizing:border-box}
+@media(max-width:600px){#carryStatus{top:44%;font-size:10px}#objective{max-width:75%;font-size:11px}#skipIntro{width:100%}}
+
+#start03,#resume03,#retry03{background:#293322;color:#e0e3cd;border:1px solid #96a97a;min-height:47px;padding:12px 18px;margin:8px 4px 8px 0;font:inherit;font-size:13px;cursor:pointer}#resume03[hidden]{display:none}#difficulty{display:block;margin-top:6px;min-height:36px;max-width:100%;background:#192018;color:#e0e3cd;border:1px solid #6d7c60;font:inherit;font-size:13px;padding:5px}
+#cleanupPanel{position:absolute;right:2%;top:21%;width:24%;max-width:270px;background:#0a100ef0;border:1px solid #5e6a51;padding:12px;box-sizing:border-box;color:#d4dcc4;font-size:13px;line-height:1.7}#cleanupPanel[hidden]{display:none}#cleanupClock{font-size:26px;letter-spacing:.1em;line-height:1.2;margin-bottom:8px;color:#e2e6ce}#cleanupClock.urgent{color:#efb3a0}.timerNote{font-size:10px;line-height:1.4;margin-top:8px;color:#a4b099}
+#result03{position:fixed;inset:0;z-index:15;background:#080e0cf8;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;box-sizing:border-box}#result03[hidden]{display:none}#result03>div{max-width:650px}#result03 h2{font-size:36px;font-weight:normal;color:#d2dac0}#result03 p{line-height:1.7;color:#c3cbb7}#free03{background:#172017;color:#d2dac0;border:1px solid #65755a;min-height:47px;padding:12px 18px;font:inherit;font-size:13px}
+@media(max-width:600px){#cleanupPanel{top:23%;width:35%;padding:6px;font-size:10px}#cleanupClock{font-size:18px}.timerNote{display:none}#start03,#resume03{width:100%}}
+#cut03{position:fixed;inset:0;z-index:9;background:#030504;display:flex;align-items:center;justify-content:center;color:#b7b5a4;font:18px monospace;letter-spacing:.08em}#cut03[hidden]{display:none}
+
+#fabricPanel{width:640px;max-width:94vw;text-align:center;padding:20px;box-sizing:border-box}#fabricPanel h2{font-size:28px;font-weight:normal}#fabricCanvas{width:100%;height:auto;max-height:40vh;image-rendering:pixelated;border:1px solid #414735}#fabricHint{font-size:16px;line-height:1.6}#fabricProgress{color:#d5dfbd}#skipFabric,#next04,#start04,#resume04,#retry04,#free04,#back03{background:#253022;border:1px solid #899b72;color:#d9dfca;font:14px monospace;padding:12px 18px;margin:6px;min-height:46px}#resume04[hidden]{display:none}
+#choice04,#end04{position:fixed;inset:0;z-index:16;background:#090f0df7;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}#choice04[hidden],#end04[hidden]{display:none}#choice04>div,#end04>div{width:650px;max-width:100%;text-align:left}#choice04 h2,#end04 h2{font-size:30px;font-weight:normal;line-height:1.4}#choice04 button{display:block;width:100%;min-height:48px;margin:12px 0;padding:14px 18px;background:#182319;border:1px solid #748566;color:#dbe1ca;font:16px/1.5 monospace;text-align:left}#end04 p{line-height:1.7}#visitStatus{position:absolute;right:2%;top:22%;max-width:25%;font-size:13px;line-height:1.6;padding:12px;background:#10170fe8;border:1px solid #566447}#visitStatus[hidden]{display:none}#test04scenario{display:block;min-height:38px;background:#192018;color:#dce1cc;border:1px solid #78866c;padding:7px;font:13px monospace;max-width:100%}
+@media(max-width:600px){#visitStatus{font-size:10px;padding:6px;max-width:30%}#fabricPanel h2{font-size:22px}#fabricHint{font-size:14px}#choice04 button{font-size:14px}#start04,#resume04{width:100%;margin:6px 0}}
+
+#choice04,#end04{overflow:auto}#choice04>div,#end04>div{margin:auto}#book04{position:fixed;inset:0;z-index:17;background:#070c0af7;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;overflow:auto}#book04[hidden]{display:none}#bookPage{width:620px;max-width:100%;margin:auto;background:#24291f;border:1px solid #7a8266;padding:32px;box-sizing:border-box;color:#dce0cc}#bookPage h2{font:normal 28px/1.5 monospace}#bookEntry{font-size:20px;line-height:1.7;white-space:pre-wrap;border-bottom:1px solid #61684e;padding-bottom:24px}#alienEntry{color:#e0b5a5;font:italic 22px/1.6 Georgia,serif;padding:12px 0}#book04 button{font:15px monospace;padding:14px 20px;min-height:46px;background:#303b28;border:1px solid #96a17e;color:#e0e6cf}#book04 .foot{font-size:14px;line-height:1.6}@media(max-width:600px){#choice04{padding:16px}#choice04 h2{font-size:23px}#choice04 button{font-size:14px;margin:8px 0;padding:10px 12px}#book04{padding:16px}#bookPage{padding:20px}#bookEntry{font-size:17px}#alienEntry{font-size:19px}}
+#nightFade{position:fixed;inset:0;z-index:19;display:flex;align-items:center;justify-content:center;background:#060a08;color:#cdd2bc;text-align:center;padding:24px;box-sizing:border-box;pointer-events:none}#nightFade[hidden]{display:none}#nightFade h2{font-size:clamp(26px,4vw,42px);font-weight:normal;letter-spacing:.08em}#nightFade p{font-size:14px;color:#9da78f}
+#arcSheet,#arcEnd{position:fixed;inset:0;z-index:18;background:#080e0cf7;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;overflow:auto}#arcSheet[hidden],#arcEnd[hidden]{display:none}#arcSheet section,#arcEnd section{width:680px;max-width:100%;margin:auto}#arcSheet h2,#arcEnd h2{font-size:clamp(24px,3vw,34px);line-height:1.4;font-weight:normal}#arcSheetBody,#arcEndText{font-size:18px;line-height:1.7;white-space:pre-wrap;color:#d5dcc7}#arcSheet button,#arcEnd button,.arcStart{background:#233122;border:1px solid #889d72;color:#dce5cd;min-height:46px;font:15px/1.5 monospace;padding:12px 18px;margin:6px 8px 6px 0}#arcSheetButtons button{display:block;width:100%;text-align:left}#arcSheetButtons.musicKeys{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}#arcSheetButtons.musicKeys button{flex:1;min-width:100px;text-align:center;margin:0}#arcSheetButtons button:hover,.arcStart:hover{background:#35452e}.journalEntry{border-left:2px solid #84966d;padding-left:18px;margin:20px 0}.journalEntry h3{font-size:14px;color:#aab997;letter-spacing:.1em}.journalEntry p{margin:8px 0;font-size:17px}.journalEntry em{color:#d7ac9d}
+#arcMedia{position:fixed;inset:0;z-index:8;background:#040807;display:flex;justify-content:center;align-items:center;padding:20px;box-sizing:border-box;overflow:auto}#arcMedia[hidden]{display:none}#arcMedia section{width:820px;max-width:100%;margin:auto}.mediaHeader{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:12px;font:13px/1.5 monospace;color:#b1c0a3}.mediaHeader button{padding:8px 12px;border:1px solid #687e61;background:#152117;color:#ccd9bd;font:13px monospace}#memoryCanvas{width:100%;height:auto;max-height:49vh;object-fit:contain;background:#101a14;image-rendering:pixelated;border:1px solid #465642;box-sizing:border-box}#arcMedia #line{position:relative;inset:auto;margin-top:12px;min-height:150px;opacity:1;transition:none}#arcMedia #spoken{font-size:20px;min-height:3em}#arcMedia #dialogHint{font-size:13px}
+#arcStatus{position:absolute;right:2%;top:22%;max-width:25%;padding:12px;font:13px/1.6 monospace;background:#0d170eea;border:1px solid #5b7151;color:#d0dec1;box-sizing:border-box}#arcStatus[hidden]{display:none}#hideVeil{position:absolute;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(0deg,#050a09ed 0,#050a09ed 8%,transparent 8%,transparent 10%);box-shadow:inset 0 0 80px 30px #020605}#hideVeil[hidden]{display:none}#hud{z-index:2}#hud{position:absolute}.arcFoot{font-size:13px;color:#9aab8f;line-height:1.6}#arcEndText{margin-bottom:24px}
+@media(max-width:600px){#arcSheet,#arcEnd{padding:16px}#arcSheetBody,#arcEndText{font-size:16px}#arcMedia{padding:12px}#arcMedia #line{padding:12px;min-height:160px}#arcMedia #spoken{font-size:16px}#arcMedia #dialogHint{font-size:11px}.mediaHeader{font-size:11px;gap:8px}.mediaHeader button{font-size:11px;flex-shrink:0}#memoryCanvas{max-height:35vh}#arcStatus{top:22%;padding:6px;font-size:10px;max-width:27%}.arcStart{width:100%;margin:5px 0}#arcSheetButtons.musicKeys button{min-width:70px;padding:12px 6px}#arcEnd button{width:100%}}
+#arcSheetButtons.musicKeys button{box-sizing:border-box;overflow-wrap:anywhere}#arcSheetButtons.musicKeys button:first-child{flex-basis:100%;min-width:100%}
+
+#arcSheet{z-index:20}
+
+#continueStory,#menuGallery{font:inherit;color:#dce2c9;border:1px solid #7c8c68;background:#263222;padding:12px 20px;font-size:14px;min-height:47px}#continueStory:hover,#menuGallery:hover{background:#3c4b31}#continueStory[hidden]{display:none}#menuGallery{color:#c6d0b5!important;border-color:#596a4a}#playOptions,#chapterSelect{margin:20px 0;border-top:1px solid #424c38;padding-top:16px;text-align:left}summary{cursor:pointer;color:#c5cdb4;min-height:32px;line-height:1.5;font-size:14px}summary:focus-visible,button:focus-visible{outline:2px solid #e7dcb6;outline-offset:4px}#playOptions[open] #keys{margin-top:16px}.mainActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}.mainActions button{margin:0}#chapterSelect button{font-size:12px}.quietButton{background:transparent!important;font-size:12px!important}#finalDark{position:absolute;inset:0;background:#02060899;pointer-events:none;z-index:1}#finalDark[hidden]{display:none}#arcEnd[data-ending]{background:#080e0cfa}#arcEnd[data-ending="name"]{background:linear-gradient(130deg,#17251cfb,#0a120ffa)}#endingView{width:100%;height:auto;max-height:110px;object-fit:cover;image-rendering:pixelated;border-bottom:1px solid #6d7a57;margin:12px 0 24px}#arcEndText{white-space:pre-line;font-size:17px;line-height:1.65}#arcEnd section{padding:24px 0}#arcEnd h2{margin:16px 0 20px}#arcSheetBody{font-size:17px}#arcStatus{max-width:25%}@media(max-width:600px){.mainActions{display:block}.mainActions button{display:block;width:100%;margin:8px 0}#panel h1{font-size:36px}#arcEndText{font-size:16px}#arcSheetBody{font-size:16px}#arcEnd section{padding:8px 0}}
+
+</style>
+</head>
+<body>
+<div id="wrap"><div id="stage">
+  <canvas id="c"></canvas><div id="hideVeil" hidden></div><div id="finalDark" hidden></div>
+  <div id="hud"><div id="arcStatus" hidden></div>
+    <div id="cross"></div>
+    <div id="count">ЧАСТЬ 01 / ПРОБУЖДЕНИЕ</div><button id="menuBtn">ESC · НАСТРОЙКИ</button><div id="cleanupPanel" hidden><div id="cleanupClock">06:00</div><div id="cleanupList"></div><div class="timerNote">Пауза и диалоги не тратят время</div></div><div id="carryStatus"></div><div id="visitStatus" hidden></div><div id="holdUI" hidden><svg viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="27" fill="none" stroke="#3e493a" stroke-width="4"/><circle id="holdArc" cx="32" cy="32" r="27" fill="none" stroke="#d2dcb8" stroke-width="4" stroke-dasharray="169.65" stroke-dashoffset="169.65" transform="rotate(-90 32 32)"/></svg><div id="holdLabel"></div></div><div id="objective">Осмотрите записку на столе</div>
+    <div id="hint">Стрелки ← → ↑ ↓ — смотреть · WASD — ходить · зажатая кнопка мыши — тоже смотреть</div>
+    <div id="prompt"></div>
+    <div id="line" aria-label="Реплики персонажей"><div id="speaker"></div><div id="spoken"><span id="typed"></span><span id="caret" aria-hidden="true">▏</span></div><div id="dialogHint"></div></div>
+  </div>
+</div></div>
+
+<div id="nightFade" hidden><div><div class="eyebrow" id="nightDay"></div><h2 id="nightTitle"></h2><p>Некоторые часы не оставляют воспоминаний.</p></div></div>
+<div id="arcSheet" hidden><section><div class="eyebrow" id="arcSheetLabel"></div><h2 id="arcSheetTitle"></h2><div id="arcSheetBody"></div><div id="arcSheetButtons"></div><button id="arcSheetClose">Закрыть</button></section></div>
+<div id="arcMedia" hidden><section><div class="mediaHeader"><span id="mediaLabel"></span><button id="skipMedia">Пропустить запись</button></div><canvas id="memoryCanvas" width="320" height="180"></canvas><div id="mediaDialogue"></div></section></div>
+<div id="arcEnd" hidden><section><div class="eyebrow" id="arcEndLabel"></div><canvas id="endingView" width="320" height="48" hidden></canvas><h2 id="arcEndTitle"></h2><p id="arcEndText"></p><div><button id="arcRetry">Повторить ночь</button><button id="arcExplore">Осмотреть дом</button><button id="arcReadJournal">Прочитать дневник</button><button id="finalGallery" hidden>Другие концовки</button><button id="finalCredits" hidden>Титры</button><button id="finalNew" hidden>К началу</button></div></section></div>
+
+<div id="cut03" hidden><div id="fabricPanel"><div class="eyebrow">ФИЛЬТР ОТРИЦАНИЯ</div><h2>Только ткань.</h2><canvas id="fabricCanvas" width="320" height="160"></canvas><p id="fabricHint">Ведите мышь вверх-вниз. Не нужно двигать резко.</p><p id="fabricProgress">0 / 8</p><p class="foot">Запасное управление: ↑ и ↓ по очереди. Esc — пауза.</p><button id="skipFabric">Пропустить сцену</button></div></div>
+<div id="overlay"><div id="panel">
+  <div class="eyebrow">ПРОВАЛ / ПОЛНАЯ ИСТОРИЯ / 1.0</div>
+  <h1>ПРОВАЛ</h1><h2>Пять ночей. Один открытый порог.</h2>
+  <p class="intro">В доме кто-то был.<br>Последние три дня вы не помните.</p>
+  <div id="warn">Психологический хоррор: тревожный звук, кровавые следы, подразумеваемое насилие за кадром и искажения восприятия. Это вымышленная история, а не достоверное изображение диссоциативных расстройств. Резкое мерцание в этой сборке отключено.</div>
+  <details id="playOptions"><summary>Управление и настройки</summary><div id="keys">WASD — ходить · мышь — смотреть · E / пробел — осмотр и продолжение текста<br>Первое нажатие раскрывает фразу, следующее — продолжает.<br>Если захват мыши недоступен: зажмите левую кнопку и ведите.<br>Стрелки — запасное управление взглядом · Esc — пауза · M — звук · J — дневник (части 05–08)</div>
+  <div class="settings">
+    <label><input type="checkbox" id="soft" checked> Без мерцания и рывков текста</label>
+    <label>Яркость <input type="range" id="brightness" min="0.7" max="1.7" step="0.05" value="1.05"><output id="brightnessVal">105%</output></label>
+    <label>Чувствительность мыши <input type="range" id="sensitivity" min="0.4" max="2.4" step="0.1" value="1"><output id="sensitivityVal">1.0</output></label>
+    <label>Поле зрения <input type="range" id="fov" min="60" max="95" value="75"><output id="fovVal">75°</output></label>
+    <label>Скорость текста <input type="range" id="textSpeed" min="15" max="65" step="5" value="35"><output id="textSpeedVal">35 букв/с</output></label>
+    <label>Громкость текста <input type="range" id="textVolume" min="0.3" max="1.8" step="0.05" value="1.25"><output id="textVolumeVal">125%</output></label>
+    <label><input type="checkbox" id="textSound" checked> Звук появления букв</label>
+    <label><input type="checkbox" id="autoText"> Автоматически продолжать реплики</label>
+    <label><input type="checkbox" id="scareOn" checked> Скримеры без мерцания (части 05–08)</label><label>Таймер части 03 <select id="difficulty"><option value="360">Обычный — 6 минут</option><option value="480">Спокойный — 8 минут</option></select></label>
+    <label>Тест части 04 <select id="test04scenario"><option value="clean">Дом после полной уборки</option><option value="dirty">Остались следы</option></select></label><label>Громкость <input type="range" id="volume" min="0" max="1" step="0.05" value="0.45"><output id="volumeVal">45%</output></label>
+  </div>
+  </details><div class="mainActions"><button id="continueStory" hidden>ПРОДОЛЖИТЬ ИСТОРИЮ</button><button id="start">НОВАЯ ИГРА</button></div><details id="chapterSelect"><summary>Выбор эпизода для повторного прохождения</summary> <button id="skipIntro">ЧАСТЬ 02</button> <button id="start03">СРАЗУ ЧАСТЬ 03</button><button id="start04">СРАЗУ ЧАСТЬ 04</button><button id="resume04" hidden>ПРОДОЛЖИТЬ ЧАСТЬ 04</button><button id="resume03" hidden>ПРОДОЛЖИТЬ ЧАСТЬ 03</button><div id="arcStarts"><button class="arcStart" id="start05">ЧАСТЬ 05 · КАССЕТА</button><button class="arcStart" id="start06">ЧАСТЬ 06 · ТРЕТЬЯ НОЧЬ</button><button class="arcStart" id="start07">ЧАСТЬ 07 · ПОДВАЛ</button><button class="arcStart" id="start08">ЧАСТЬ 08 · ПЯТАЯ НОЧЬ</button><button class="arcStart" id="resumeArc" hidden>ПРОДОЛЖИТЬ НОЧИ 05–08</button></div></details><button id="menuGallery" class="quietButton">КОНЦОВКИ</button><p class="foot">7 помещений · 5 ночей · 4 концовки · без интернета · клавиатура и мышь</p>
+</div></div>
+<div id="endPanel" hidden><div><div class="eyebrow">КОНЕЦ ЧАСТИ 02</div><h2>Дом помнит.</h2><p>Вы осмотрели новые комнаты и перенесли ящик.<br>В прихожей звонит телефон. Пора ответить.</p><button id="continue">ПРОДОЛЖИТЬ ОСМОТР</button><button id="restart">НАЧАТЬ ЗАНОВО</button></div></div>
+<div id="result03" hidden><div><div class="eyebrow">ЧАСТЬ 03 / РЕЗУЛЬТАТ</div><h2 id="result03title"></h2><p id="result03text"></p><button id="next04">ОТКРЫТЬ ЧАСТЬ 04</button><button id="retry03">НАЧАТЬ ЧАСТЬ ЗАНОВО</button> <button id="free03">ОСМОТРЕТЬ ДОМ БЕЗ ТАЙМЕРА</button></div></div>
+<div id="choice04" hidden><div><div class="eyebrow" id="choice04label"></div><h2 id="choice04title"></h2><div id="choice04buttons"></div></div></div>
+<div id="end04" hidden><div><div class="eyebrow">ЧАСТЬ 04 / РЕЗУЛЬТАТ</div><h2 id="end04title"></h2><p id="end04text"></p><button id="retry04">ПОВТОРИТЬ ВИЗИТ</button><button id="free04">ОСМОТРЕТЬ ДОМ</button><button id="back03">ЗАНОВО УБОРКУ</button></div></div>
+<div id="book04" hidden><div id="bookPage"><div class="eyebrow">СРЕДА · ПЕРВАЯ НОЧЬ</div><h2>Моя запись</h2><div id="bookEntry"></div><div id="alienEntry">«Ты опять написал не то имя.»</div><p class="foot">Эту строку я не писал. Чернила ещё блестят.<br>Я оставлю страницу открытой. Утром сравню почерк.</p><button id="closeBook04">Закрыть дневник</button></div></div>
+<script>
+(()=>{
+'use strict';
+/* ---------- базовое ---------- */
+const W=320,H=180;
+const $=id=>document.getElementById(id);
+const canvas=$('c'),ctx=canvas.getContext('2d');
+canvas.width=W;canvas.height=H;
+const img=ctx.createImageData(W,H);
+const out32=new Uint32Array(img.data.buffer);
+const zb=new Float32Array(W*H),cb=new Int32Array(W*H);
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const rgb=(r,g,b)=>((r<0?0:r>255?255:r)<<16)|((g<0?0:g>255?255:g)<<8)|(b<0?0:b>255?255:b);
+
+const state={t:0,startT:0,started:false,paused:false,doorOpen:false,phoneDone:false,phoneRinging:false,phoneRingTimer:0,ringsPlayed:0,soft:true,brightness:1.05,sensitivity:1,volume:.45,textSpeed:35,textSound:true,textVolume:1.25,autoText:false,lamp:1,outage:0,flashOn:false,flashLeft:0,nextFlash:14,
+  examined:new Set(),idle:0,ended:false,cleanup:{mode:false,running:false,finished:false,remaining:360,cleaned:new Set(),carried:null,bundle:false,tool:false,toolPlace:null,knife:false,prepared:false,hiddenParts:[],part:null,cutting:0},livingOpen:false,bathOpen:false,pantryOpen:false,carrying:false,cratePlaced:false,hold:null,faucet:false,visited:new Set(),stepT:0,heartT:1,muted:false};
+const arc=state.arc={active:false,part:5,step:"",journal:[],lastEntry:0,suspicion:0,transition:0};
+state.workshopOpen=false;state.cellarOpen=false;state.scareOn=true;
+state.visit={mode:false,phase:"door",node:0,moving:false,x:9.95,z:-.85,answer:null,diary:null,done:false};
+const cam={x:1.1,y:1.55,z:0.9,yaw:1.02,pitch:-0.05,fov:75*Math.PI/180};
+
+/* ---------- шум ---------- */
+function h2(x,y){let n=(Math.imul(x,374761393)+Math.imul(y,668265263))|0;n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967296;}
+function noise(u,v){const x=Math.floor(u),y=Math.floor(v),fx=u-x,fy=v-y,sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
+  const a=h2(x,y),b=h2(x+1,y),c=h2(x,y+1),d=h2(x+1,y+1);return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy;}
+
+/* ---------- пол: запекаем один раз (плитка, грязь, лужа, следы к двери) ---------- */
+const PX=4.7,PZ=3.2,PR=0.95,DOORZ=2.8,FS=48,FW=8*FS,FD=6*FS;
+const floorBake=new Int32Array(FW*FD);
+function floorRaw(u,v){
+  const T=0.6,tx=Math.floor(u/T),tz=Math.floor(v/T),fu=u/T-tx,fz=v/T-tz,k=((tx+tz)&1);
+  let r=k?150:74,g=k?142:70,b=k?128:64;
+  const gr=0.62+0.55*(noise(u*2.7,v*2.7)*0.6+noise(u*9,v*9)*0.4);
+  r*=gr;g*=gr;b*=gr;
+  if(fu<0.025||fz<0.025){r*=0.6;g*=0.6;b*=0.6;}
+  const dx=u-PX,dz=v-PZ,d2=dx*dx+dz*dz;
+  if(d2<3.4){
+    const d=Math.sqrt(d2),a=Math.atan2(dz,dx);
+    const R=PR*(0.8+0.18*Math.sin(a*3+1.3)+0.12*Math.sin(a*5+0.4)+0.08*Math.sin(a*9+2.1)+0.16*noise(u*4,v*4));
+    if(d<R){
+      const t=d/R,n=noise(u*14,v*14);
+      r=62+66*t*(0.6+0.4*n)+(t>0.86?26:0);g=5+9*n;b=7+6*n;
+      if(n>0.8&&t<0.8){r+=44;g+=8;b+=8;}
+    }else if(d<R*1.9){
+      if(h2(Math.floor(u*20),Math.floor(v*20))<0.04*(1.9-d/R)){r=88;g=8;b=10;}
+    }
+  }
+  if(u>PX+0.5){
+    const lz=PZ+(DOORZ-PZ)*(u-PX)/(8-PX)+0.08*Math.sin(u*5),w=Math.abs(v-lz);
+    const wd=0.045+0.03*noise(u*6,1.5);
+    if(w<wd&&(Math.floor(u*3.2)&1)===0){r=70+20*noise(u*20,v*20);g=6;b=8;}
+  }
+  return rgb(r,g,b);
+}
+function bakeFloor(){for(let j=0;j<FD;j++){const v=(j+0.5)/FS;for(let i=0;i<FW;i++)floorBake[j*FW+i]=floorRaw((i+0.5)/FS,v);}}
+bakeFloor();
+
+/* ---------- материалы ---------- */
+const T={};
+T.floor=(u,v)=>{let i=(u*FS)|0,j=(v*FS)|0;i=i<0?0:i>=FW?FW-1:i;j=j<0?0:j>=FD?FD-1:j;return floorBake[j*FW+i];};
+T.ceil=(u,v)=>{const k=34+22*noise(u*3,v*3);return rgb(k,k*.95,k*.9);};
+T.wall=(u,v)=>{
+  let r,g,b;
+  if(v<1.3){const tu=u/0.18,tv=v/0.18,fx=tu-Math.floor(tu),fy=tv-Math.floor(tv);
+    if(fx<0.07||fy<0.07){r=70;g=76;b=70;}else{const n=0.75+0.35*h2(Math.floor(tu),Math.floor(tv));r=128*n;g=138*n;b=126*n;}
+    const st=noise(u*3,v*0.6)*0.5+0.6;r*=st;g*=st;b*=st;
+  }else if(v<1.38){r=44;g=36;b=32;}
+  else{const n=0.8+0.3*noise(u*1.3,v*1.3)+0.12*noise(u*9,v*9);r=86*n;g=96*n;b=88*n;
+    if(noise(u*5,v*0.35+7)>0.72){r*=.7;g*=.7;b*=.7;}}
+  return rgb(r,g,b);
+};
+T.wood=(u,v)=>{const g=0.72+0.4*noise(u*60,v*3);return rgb(108*g,62*g,38*g);};
+T.cloth=(u,v)=>{const w=((Math.floor(u*24)+Math.floor(v*24))&1)?1:.9;let k=w*(0.85+0.2*noise(u*6,v*6));
+  if(noise(u*3+5,v*3)>0.8)return rgb(96*k,84*k,40*k);return rgb(62*k,118*k,86*k);};
+T.cabSide=(u,v)=>{const fu=(u/0.6)%1;let k=0.8+0.2*noise(u*4,v*4);if(fu<0.04||v>0.84||v<0.05)k*=0.45;return rgb(120*k,86*k,58*k);};
+T.cabTop=(u,v)=>{const k=0.8+0.4*noise(u*5,v*5);return rgb(52*k,50*k,48*k);};
+T.fridge=(u,v)=>{const k=0.85+0.2*noise(u*8,v*8);const seam=Math.abs(v-1.25)<0.015?0.55:1;return rgb(196*k*seam,198*k*seam,190*k*seam);};
+T.yellow=(u,v)=>{const k=0.8+0.3*noise(u*9,v*9);return rgb(206*k,172*k,32*k);};
+T.blue=(u,v)=>{const k=0.8+0.3*noise(u*9,v*9);return rgb(40*k,84*k,150*k);};
+const solid=(r,g,b,gr)=>(u,v)=>{const k=1-(gr||0)+(gr||0)*2*noise(u*30,v*30);return rgb(r*k,g*k,b*k);};
+T.plate=solid(205,200,190,.05);T.food=solid(96,40,28,.15);T.bottle=solid(28,72,42,.1);T.glass=solid(150,176,190,.05);
+T.paper=solid(226,220,200,.04);T.lamp=solid(255,236,190);T.handle=solid(60,60,64);T.skin=solid(176,164,150,.1);T.scarf=solid(160,22,28,.1);
+T.window=(u,v)=>{
+  if(u<0.05||u>1.55||v<0.05||v>0.9||Math.abs(u-0.8)<0.03||Math.abs(v-0.47)<0.025)return rgb(30,26,24);
+  const n=noise(u*10,v*10);let r=16+10*n,g=34+14*n,b=72+24*n;
+  const dx=u-1.15,dy=v-0.6;if(dx*dx+dy*dy<0.012){r=200;g=210;b=230;}
+  return rgb(r,g,b);
+};
+T.door=(u,v)=>{
+  const g=0.7+0.4*noise(u*50,v*2.5);let r=72*g,gg=42*g,b=28*g;
+  if(Math.abs(u-0.15)<0.04&&Math.abs(v-1.0)<0.06){r=150;gg=130;b=70;}
+  if((u<0.06||u>0.94)||v<0.04)r*=.6;
+  return rgb(r,gg,b);
+};
+T.blanket=(u,v)=>{
+  if(state.flashOn){const n=0.7+0.5*noise(u*8,v*8);return rgb(52*n,44*n,50*n);}
+  const a=Math.floor(u*7)&1,b=Math.floor(v*7)&1;let r,g,bl;
+  if(a&&b){r=120;g=36;bl=30;}else if(a||b){r=84;g=56;bl=44;}else{r=52;g=44;bl=40;}
+  const n=0.8+0.3*noise(u*10,v*10);return rgb(r*n,g*n,bl*n);
+};
+
+// Изношенная ткань сиденья: нити, потёртый центр, шов по краю.
+T.seat=(u,v)=>{const edge=Math.min(u,v,.48-u,.48-v);let k=.8+.16*noise(u*40,v*40);
+  k*=((Math.floor(u*160)+Math.floor(v*160))&1)?1:.76;
+  if(Math.hypot(u-.24,v-.24)<.14)k*=1.23;
+  if(edge<.025)k*=.45;
+  if(edge>.026&&edge<.04&&((Math.floor((u+v)*90)&1)===0))return rgb(154,139,99);
+  return rgb(91*k,102*k,73*k);};
+T.chairWood=(u,v)=>{const grain=.63+.24*noise(u*95,v*6)+.12*Math.sin(u*240+noise(u*8,v*8)*3);
+  const scratch=h2(Math.floor(u*100),Math.floor(v*25))>.96?.5:1;return rgb(139*grain*scratch,91*grain*scratch,54*grain*scratch);};
+// Плед имеет отдельную тканую фактуру, без красных граней старого ящика.
+const weaveSize=128,weave=new Int32Array(weaveSize*weaveSize);
+for(let j=0;j<weaveSize;j++)for(let i=0;i<weaveSize;i++){
+  const u=i/weaveSize,v=j/weaveSize;let k=.82+.16*noise(u*20,v*20);
+  k*=((i+j)&1)?.92:1.05;const stripe=(i%32<5||j%32<4);
+  const fine=(i%32===8||j%32===7);let r=122,g=116,b=99;
+  if(stripe){r=72;g=78;b=68;}if(fine){r=151;g=143;b=112;}
+  if(i<3||i>124||j<3||j>124){r=68;g=66;b=54;}
+  weave[j*weaveSize+i]=rgb(r*k,g*k,b*k);
+}
+T.drape=(u,v)=>weave[clamp(Math.floor(v*127),0,127)*128+clamp(Math.floor(u*127),0,127)];
+const chairColliders=[];
+/* ---------- геометрия ---------- */
+const faces=[];
+const LAMP=[4.2,2.45,3.0];
+function shadeFor(cx,cy,cz,n){
+  const dx=LAMP[0]-cx,dy=LAMP[1]-cy,dz=LAMP[2]-cz,d=Math.hypot(dx,dy,dz)||1;
+  const l=Math.max(0,(dx*n[0]+dy*n[1]+dz*n[2])/d),att=clamp(1.5/(1+0.045*d*d),0.35,1);
+  const hall=cx>8;return hall ? 0.50+0.22*l : 0.30+0.65*l*att;
+}
+function quad(P,UV,mat,n,o){
+  o=o||{};
+  const cx=(P[0][0]+P[2][0])/2,cy=(P[0][1]+P[2][1])/2,cz=(P[0][2]+P[2][2])/2;
+  faces.push({P,UV,t:mat,shade:o.emis?1.5:shadeFor(cx,cy,cz,n),vis:o.vis});
+}
+function box(cx,y0,cz,sx,sy,sz,ry,mat,o){
+  o=o||{};const c=Math.cos(ry),s=Math.sin(ry),hx=sx/2,hz=sz/2,y1=y0+sy;
+  const L=(lx,lz)=>[cx+lx*c+lz*s,cz-lx*s+lz*c];
+  const A=L(-hx,-hz),B=L(hx,-hz),C=L(hx,hz),D=L(-hx,hz);
+  const top=o.top||mat;
+  quad([[A[0],y1,A[1]],[B[0],y1,B[1]],[C[0],y1,C[1]],[D[0],y1,D[1]]],[[0,0],[sx,0],[sx,sz],[0,sz]],top,[0,1,0],o);
+  const side=(p,q,len,n)=>quad([[p[0],y0,p[1]],[q[0],y0,q[1]],[q[0],y1,q[1]],[p[0],y1,p[1]]],[[0,0],[len,0],[len,sy],[0,sy]],mat,n,o);
+  side(A,B,sx,[-s,0,-c]);side(B,C,sz,[c,0,-s]);side(C,D,sx,[s,0,c]);side(D,A,sz,[-c,0,s]);
+}
+const rotXZ=(cx,cz,ry,lx,lz)=>[cx+lx*Math.cos(ry)+lz*Math.sin(ry),cz-lx*Math.sin(ry)+lz*Math.cos(ry)];
+
+// Округлые формы без кровавых деталей: голова, руки, кисти.
+function ellipsoid(cx,cy,cz,rx,ry,rz,mat,seg=10,rings=6){
+  const V=(i,j)=>{const a=i/seg*Math.PI*2,b=j/rings*Math.PI;return [cx+rx*Math.sin(b)*Math.cos(a),cy+ry*Math.cos(b),cz+rz*Math.sin(b)*Math.sin(a)];};
+  for(let i=0;i<seg;i++)for(let j=0;j<rings;j++){
+    const p=[V(i,j),V(i+1,j),V(i+1,j+1),V(i,j+1)],m=p.reduce((a,q)=>a.map((v,k)=>v+q[k]/4),[0,0,0]);
+    const n=[(m[0]-cx)/rx,(m[1]-cy)/ry,(m[2]-cz)/rz],len=Math.hypot(...n)||1;
+    quad(p,[[i/seg,j/rings],[(i+1)/seg,j/rings],[(i+1)/seg,(j+1)/rings],[i/seg,(j+1)/rings]],mat,n.map(x=>x/len));
+  }
+}
+function limb(a,b,r,mat){
+  const dx=b[0]-a[0],dz=b[2]-a[2],len=Math.hypot(dx,dz)||1,px=-dz/len,pz=dx/len,N=8;
+  const v=(p,i)=>{const t=i/N*Math.PI*2;return [p[0]+px*r*Math.cos(t),p[1]+r*.65*Math.sin(t),p[2]+pz*r*Math.cos(t)];};
+  for(let i=0;i<N;i++)quad([v(a,i),v(b,i),v(b,i+1),v(a,i+1)],[[0,i/N],[len,i/N],[len,(i+1)/N],[0,(i+1)/N]],mat,[px*Math.cos(i/N*Math.PI*2),Math.sin(i/N*Math.PI*2),pz*Math.cos(i/N*Math.PI*2)]);
+  ellipsoid(...a,r,r*.65,r,mat,8,4);ellipsoid(...b,r,r*.65,r,mat,8,4);
+}
+function buildRoom(){
+  quad([[0,0,0],[8,0,0],[8,0,6],[0,0,6]],[[0,0],[8,0],[8,6],[0,6]],T.floor,[0,1,0],{});
+  faces[faces.length-1].shade=0.95;
+  quad([[0,2.6,0],[8,2.6,0],[8,2.6,6],[0,2.6,6]],[[0,0],[8,0],[8,6],[0,6]],T.ceil,[0,-1,0],{});
+  // Проём на восточной стене; северная стена кухни остаётся цельной.
+  quad([[0,0,6],[8,0,6],[8,2.6,6],[0,2.6,6]],[[0,0],[8,0],[8,2.6],[0,2.6]],T.wall,[0,0,-1]);
+  quad([[8,0,0],[0,0,0],[0,2.6,0],[8,2.6,0]],[[0,0],[8,0],[8,2.6],[0,2.6]],T.wall,[0,0,1]);
+  quad([[0,0,0],[0,0,6],[0,2.6,6],[0,2.6,0]],[[0,0],[6,0],[6,2.6],[0,2.6]],T.wall,[1,0,0]);
+  for(const [a,b,lo,hi] of [[0,2.1,0,2.6],[3.5,6,0,2.6],[2.1,3.5,2.15,2.6]])
+    quad([[8,lo,a],[8,lo,b],[8,hi,b],[8,hi,a]],[[a,lo],[b,lo],[b,hi],[a,hi]],T.wall,[-1,0,0]);
+  quad([[2.4,1.25,5.99],[4.0,1.25,5.99],[4.0,2.2,5.99],[2.4,2.2,5.99]],[[0,0],[1.6,0],[1.6,0.95],[0,0.95]],T.window,[0,0,-1],{emis:true});
+  quad([[8,0,2.1],[8,0,3.5],[8,2.15,3.5],[8,2.15,2.1]],[[0,0],[1,0],[1,2.05],[0,2.05]],T.door,[-1,0,0],{vis:()=>!state.doorOpen});
+  box(4.2,2.5,3.0,0.5,0.1,0.5,0,T.lamp,{emis:true});
+  // кухня
+  box(2.525,0,5.625,4.75,0.9,0.65,0,T.cabSide,{top:T.cabTop});
+  box(5.325,0,5.6,0.45,0.6,0.6,0,T.yellow);
+  box(5.775,0,5.6,0.45,0.6,0.6,0,T.blue);
+  box(6.9,0,5.6,1.0,1.9,0.8,0,T.fridge);
+  box(6.62,0.95,5.17,0.05,0.5,0.05,0,T.handle);
+  // стол
+  box(2.6,0.52,2.6,1.64,0.25,1.04,0,T.cloth);
+  [[-0.72,-0.42],[0.72,-0.42],[-0.72,0.42],[0.72,0.42]].forEach(p=>box(2.6+p[0],0,2.6+p[1],0.06,0.52,0.06,0,T.wood));
+  box(2.2,0.77,2.4,0.24,0.015,0.24,0.3,T.plate);box(2.22,0.785,2.42,0.1,0.01,0.08,0.3,T.food);
+  box(3.0,0.77,2.8,0.24,0.015,0.24,0,T.plate);
+  box(2.9,0.77,2.15,0.075,0.3,0.075,0,T.bottle);
+  box(2.5,0.77,2.95,0.06,0.1,0.06,0,T.glass);
+  box(2.55,0.77,2.62,0.2,0.004,0.14,0.5,T.paper);
+  // Стулья: деревянная рама, тканевое сиденье, открытая спинка.
+  const chair=(cx,cz,ry)=>{
+    box(cx,.41,cz,.51,.07,.51,ry,T.chairWood);
+    box(cx,.48,cz,.46,.055,.46,ry,T.seat);
+    [[-.205,-.205],[.205,-.205],[-.205,.205],[.205,.205]].forEach(([x,z])=>{
+      const q=rotXZ(cx,cz,ry,x,z);box(q[0],0,q[1],.065,.46,.065,ry,T.chairWood);
+    });
+    // Две стойки и три поперечные планки вместо сплошной доски.
+    for(const x of [-.225,.225]){const q=rotXZ(cx,cz,ry,x,-.23);box(q[0],.45,q[1],.065,.65,.065,ry,T.chairWood);}
+    for(const y of [.68,.84,1.0]){const q=rotXZ(cx,cz,ry,0,-.23);box(q[0],y,q[1],.47,.085,.045,ry,T.chairWood);}
+    for(const z of [-.2,.2]){const q=rotXZ(cx,cz,ry,0,z);box(q[0],.18,q[1],.44,.04,.035,ry,T.chairWood);}
+    chairColliders.push({cx,cz,ry,hx:.27,hz:.28});
+  };
+  chair(1.35,2.6,Math.PI/2);chair(3.95,2.15,-Math.PI/2+0.35);chair(2.6,3.55,Math.PI+0.2);
+  // Лена полностью укрыта пледом: никаких открытых головы, рук и кистей.
+  const blanketStart=faces.length;
+  const LX=6.7,LZ=1.0,LR=.06,NX=22,NZ=14;
+  const profile=[[-1.12,.11,.17],[-.93,.19,.20],[-.66,.23,.22],[-.39,.24,.26],[-.12,.32,.32],[.14,.30,.29],[.36,.40,.38],[.53,.34,.34],[.62,.21,.24],[.85,.25,.22],[1.02,.06,.16]];
+  function section(x){for(let i=1;i<profile.length;i++)if(x<=profile[i][0]){const a=profile[i-1],b=profile[i],t=clamp((x-a[0])/(b[0]-a[0]),0,1);return [a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];}return [.16,.2];}
+  const V=(i,j)=>{const x=-1.12+2.14*i/NX,t=-1+2*j/NZ,[h,w]=section(x),z=t*(w+.17);
+    const dome=Math.pow(Math.max(0,1-(Math.abs(z)/(w+.07))**2),.58);
+    const fold=.017*Math.cos(x*25+t*13)*Math.sin(Math.PI*j/NZ);
+    const y=.018+Math.max(0,h*dome+fold);const q=rotXZ(LX,LZ,LR,x,z+.015*Math.sin(i*2.1)*(Math.abs(t)**6));return [q[0],y,q[1]];};
+  for(let i=0;i<NX;i++)for(let j=0;j<NZ;j++){
+    const P=[V(i,j),V(i+1,j),V(i+1,j+1),V(i,j+1)],a=P[0],b=P[1],d=P[3];
+    const ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=d[0]-a[0],vy=d[1]-a[1],vz=d[2]-a[2];
+    let n=[uz*vy-uy*vz,ux*vz-uz*vx,uy*vx-ux*vy],len=Math.hypot(...n)||1;
+    quad(P,[[i/NX,j/NZ],[(i+1)/NX,j/NZ],[(i+1)/NX,(j+1)/NZ],[i/NX,(j+1)/NZ]],T.drape,n.map(v=>v/len));
+  }
+  for(const f of faces.slice(blanketStart))f.vis=()=>!state.cleanup.prepared;
+}
+buildRoom();
+// Внутренние стены с единым описанием проходов для графики и физики.
+const portals=[
+ {id:'door',axis:'x',at:8,lo:2.1,hi:3.5,key:'doorOpen'},
+ {id:'livingDoor',axis:'x',at:12,lo:2.1,hi:3.5,key:'livingOpen'},
+ {id:'bathDoor',axis:'z',at:6,lo:9.2,hi:10.6,key:'bathOpen'},
+ {id:'pantryDoor',axis:'z',at:6,lo:13.0,hi:14.4,key:'pantryOpen'},
+ {id:'workshopDoor',axis:'z',at:6,lo:16.0,hi:17.2,key:'workshopOpen'},
+ {id:'cellarDoor',axis:'x',at:18,lo:7.8,hi:9.2,key:'cellarOpen'}
+];
+function wall(axis,at,lo,hi,mat,portal){
+ const q=(a,b,y0,y1,tx=mat,vis)=>{
+  const P=axis==='x'?[[at,y0,a],[at,y0,b],[at,y1,b],[at,y1,a]]:[[a,y0,at],[b,y0,at],[b,y1,at],[a,y1,at]];
+  quad(P,[[0,y0],[b-a,y0],[b-a,y1],[0,y1]],tx,axis==='x'?[-1,0,0]:[0,0,-1],vis?{vis}:{});
+ };
+ if(!portal){q(lo,hi,0,2.6);return;}q(lo,portal.lo,0,2.6);q(portal.hi,hi,0,2.6);q(portal.lo,portal.hi,2.15,2.6);
+ q(portal.lo,portal.hi,0,2.15,T.door,()=>!state[portal.key]);
+}
+// Вторая комната. Геометрия соединена проёмом, а не телепортом.
+T.hallFloor=(u,v)=>{const seam=(Math.floor(v*5)%1),k=.7+.3*noise(u*35,v*3);return rgb(67*k,57*k,41*k);};
+T.hallWall=(u,v)=>{const k=.65+.3*noise(u*8,v*2);return rgb(79*k,83*k,66*k);};
+T.clock=(u,v)=>{const x=u-.5,y=v-.5,d=Math.hypot(x,y);if(d>.49)return rgb(34,32,25);if(d>.43)return rgb(120,119,95);let c=168;const line=(ang,len)=>{const vx=Math.sin(ang),vy=Math.cos(ang),along=x*vx-y*vy,side=Math.abs(x*vy+y*vx);return along>-.025&&along<len&&side<.014;};if(line(282*Math.PI/180,.34)||line(293.5*Math.PI/180,.23)||d<.025)c=23;return rgb(c,c*.98,c*.83);};
+quad([[8,0,0],[12,0,0],[12,0,6],[8,0,6]],[[0,0],[4,0],[4,6],[0,6]],T.hallFloor,[0,1,0]);
+quad([[8,2.6,0],[12,2.6,0],[12,2.6,6],[8,2.6,6]],[[0,0],[4,0],[4,6],[0,6]],T.ceil,[0,-1,0]);
+// Настоящий вход в наружной стене. Проход в гостиную остаётся справа.
+const entryOpen=()=>arc.active&&arc.part===8&&arc.finale?.phase==='entering'||state.visit.mode&&['entering','leaving'].includes(state.visit.phase);
+wall('z',0,8,9.35,T.hallWall);wall('z',0,10.55,12,T.hallWall);
+quad([[9.35,2.18,0],[10.55,2.18,0],[10.55,2.6,0],[9.35,2.6,0]],[[0,0],[1.2,0],[1.2,.42],[0,.42]],T.hallWall,[0,0,1]);
+T.entryDoor=(u,v)=>{const k=.8+.18*noise(u*18,v*35),edge=u<.05||u>.95||v<.035||v>.965;return edge?rgb(29,33,31):rgb(49*k,58*k,56*k);};
+quad([[9.35,0,.012],[10.55,0,.012],[10.55,2.18,.012],[9.35,2.18,.012]],[[0,0],[1,0],[1,1],[0,1]],T.entryDoor,[0,0,1],{vis:()=>!entryOpen()});
+for(const x of [9.29,10.61])box(x,0,.045,.10,2.27,.15,0,T.handle);
+box(9.95,2.2,.045,1.42,.09,.15,0,T.handle);
+box(9.95,.012,.17,1.28,.025,.35,0,T.handle);
+box(10.36,.96,.05,.16,.035,.05,0,T.handle,{vis:()=>!entryOpen()});
+box(9.95,1.52,.036,.04,.04,.022,0,T.handle,{vis:()=>!entryOpen()});
+// При открытии видны крыльцо, тёмная ограда и ночь — не другая комната.
+const porch=solid(60,64,60,.17),night=solid(8,15,18,.04),fence=solid(27,34,33,.12);
+quad([[8,0,-2.4],[12,0,-2.4],[12,0,0],[8,0,0]],[[0,0],[4,0],[4,2.4],[0,2.4]],porch,[0,1,0]);
+quad([[7,0,-2.5],[13,0,-2.5],[13,4,-2.5],[7,4,-2.5]],[[0,0],[1,0],[1,1],[0,1]],night,[0,0,1],{emis:true});
+for(let x=8;x<12.1;x+=.35)box(x,0,-1.9,.07,.85,.08,0,fence);
+box(9.95,.5,-1.9,4,.07,.08,0,fence);
+box(9.95,.01,.72,1.4,.018,.75,0,T.blanket);
+wall('z',6,8,12,T.hallWall,portals[2]);
+wall('x',12,0,6,T.hallWall,portals[1]);
+// Здесь цельная перегородка гостиной, без ложной входной двери.
+box(8.45,0,4.8,.55,.65,1.4,0,T.wood);box(8.45,.65,4.8,.4,.18,.8,.1,T.blanket);
+box(11.65,0,1.4,.5,.83,1.15,0,T.wood);box(11.65,.83,1.4,.29,.08,.4,0,T.handle);
+box(11.65,.91,1.4,.15,.04,.48,0,T.handle);
+box(9.9,2.4,3,.4,.12,.4,0,T.lamp,{emis:true});
+quad([[10.8,1.6,.01],[11.4,1.6,.01],[11.4,2.2,.01],[10.8,2.2,.01]],[[0,0],[1,0],[1,1],[0,1]],T.clock,[0,0,1]);
+// Рама и фотография без подробного портрета.
+box(8.7,1.2,.045,.6,.75,.06,0,T.wood);box(8.7,1.26,.085,.49,.62,.02,0,T.paper);
+box(8.7,1.55,.105,.12,.17,.02,0,T.handle);box(8.7,1.28,.105,.23,.27,.02,0,T.blanket);
+box(8.05,0,1.97,.12,2.2,.12,0,T.wood);box(8.05,0,3.63,.12,2.2,.12,0,T.wood);
+
+
+/* ---------- часть 02: гостиная, ванная, кладовая ---------- */
+T.wallpaper=(u,v)=>{const k=.73+.21*noise(u*6,v*3);const stripe=(Math.floor(u*8)&1)?.87:1;return rgb(108*k*stripe,104*k*stripe,77*k*stripe);};
+T.planks=(u,v)=>{const seam=(v*4)%1;const k=(seam<.035?.35:1)*(.7+.28*noise(u*3,v*45));return rgb(96*k,71*k,45*k);};
+T.tile=(u,v)=>{const a=(u*4)%1,b=(v*4)%1,k=a<.04||b<.04?.38:.85+.15*noise(u*20,v*20);return rgb(123*k,141*k,129*k);};
+T.rug=(u,v)=>{const a=(Math.floor(u*16)+Math.floor(v*16))&1;return rgb(a?77:99,a?42:54,a?34:43);};
+T.sofa=solid(59,81,65,.14);T.white=solid(176,181,158,.06);T.mirror=solid(58,82,78,.05);T.crate=solid(130,91,47,.10);
+function slab(x0,z0,x1,z1,mat){quad([[x0,0,z0],[x1,0,z0],[x1,0,z1],[x0,0,z1]],[[0,0],[x1-x0,0],[x1-x0,z1-z0],[0,z1-z0]],mat,[0,1,0]);quad([[x0,2.6,z0],[x1,2.6,z0],[x1,2.6,z1],[x0,2.6,z1]],[[0,0],[x1-x0,0],[x1-x0,z1-z0],[0,z1-z0]],T.ceil,[0,-1,0]);}
+slab(12,0,18,6,T.planks);wall('z',0,12,18,T.wallpaper);wall('x',18,0,6,T.wallpaper);
+wall('z',6,12,15,T.wallpaper,portals[3]);wall('z',6,15,18,T.wallpaper,portals[4]);
+// Диван, журнальный стол, шкатулка, телевизор и закрытое окно.
+box(17.35,0,3,.95,.42,2.6,0,T.sofa);box(17.7,.42,3,.25,.68,2.6,0,T.sofa);
+box(17.25,.42,1.8,.95,.24,.23,0,T.sofa);box(17.25,.42,4.2,.95,.24,.23,0,T.sofa);
+box(15.55,.01,3,2.4,.01,3.1,0,T.rug);box(15.55,0,3,.85,.5,1.3,0,T.chairWood);
+box(15.55,.5,3,.25,.18,.20,0,T.wood);box(15.55,.68,3,.27,.025,.22,0,T.yellow);
+box(14.1,0,.40,1.6,.58,.65,0,T.wood);box(14.1,.58,.4,.85,.6,.45,0,T.handle);box(14.1,.68,.65,.68,.40,.025,0,T.mirror);
+box(16.0,1.05,.08,1.7,1.25,.07,0,T.cloth);box(16.0,2.35,.1,1.9,.07,.1,0,T.wood);
+box(15.1,2.45,3,.50,.10,.50,0,T.lamp,{emis:true});
+slab(8,6,12,10,T.tile);wall('x',8,6,10,T.tile);wall('z',10,8,12,T.tile);wall('x',12,6,10,T.tile);
+// Ванна, умывальник с видимым краном, зеркало без отражающей технологии.
+box(8.7,0,8.4,1.05,.60,2.15,0,T.white);box(8.7,.59,8.4,.78,.025,1.85,0,T.mirror);
+box(11.5,0,8.35,.65,.85,.85,0,T.white);box(11.46,.85,8.35,.65,.05,.7,0,T.white);box(11.46,.91,8.12,.05,.24,.05,0,T.handle);box(11.36,1.12,8.12,.20,.04,.05,0,T.handle);
+box(11.97,1.2,8.35,.025,.85,.75,0,T.wood);box(11.95,1.24,8.35,.03,.76,.65,0,T.mirror);
+box(10.1,2.45,8.2,.40,.10,.4,0,T.lamp,{emis:true});
+slab(12,6,15,10,T.planks);wall('x',15,6,10,T.hallWall);wall('z',10,12,15,T.hallWall);
+// Стеллажи и отмеченная площадка для обычного ящика с плёнкой.
+for(const y of [.25,.9,1.55,2.15])box(14.7,y,8.25,.55,.055,2.6,0,T.wood);
+for(const z of [7,9.5])for(const x of [14.45,14.95])box(x,0,z,.05,2.3,.05,0,T.wood);
+for(let i=0;i<4;i++)box(14.7,.96,7.4+i*.55,.4,.28,.4,0,i%2?T.paper:T.wood);
+box(13.5,.01,8.65,1.0,.02,1.0,0,T.rug);box(13.5,.04,8.65,.7,.035,.7,0,T.paper,{vis:()=>!state.cleanup.mode&&!state.cratePlaced});
+function crate(x,z,vis){box(x,0,z,.62,.52,.55,0,T.crate,{vis});box(x,.515,z,.66,.035,.59,0,T.wood,{vis});for(const dx of [-.2,.2])box(x+dx,.552,z,.055,.012,.58,0,T.paper,{vis});}
+crate(13.8,3.9,()=>!state.cleanup.mode&&!state.carrying&&!state.cratePlaced);crate(13.5,8.65,()=>!state.cleanup.mode&&state.cratePlaced);
+box(13.5,2.45,8.2,.40,.10,.4,0,T.lamp,{emis:true});
+// Межкомнатные двери без надписей.
+
+/* ---------- часть 03: условные сюжетные задачи ---------- */
+const spills=[
+ {id:'spill0',x:4.7,z:3.2,name:'кухня, у стола'},
+ {id:'spill1',x:9.15,z:1.35,name:'прихожая, у фото'},
+ {id:'spill2',x:10.15,z:3.85,name:'прихожая, середина'},
+ {id:'spill3',x:11.15,z:4.95,name:'прихожая, у стены'},
+ {id:'spill4',x:10.0,z:7.2,name:'ванная, у порога'},
+ {id:'spill5',x:13.1,z:1.55,name:'гостиная, у телевизора'}
+];
+const originalFloor=T.floor;
+const cleanBake=new Int32Array(FW*FD);
+for(let j=0;j<FD;j++)for(let i=0;i<FW;i++){
+ const u=(i+.5)/FS,v=(j+.5)/FS,tx=Math.floor(u/.6),tz=Math.floor(v/.6),k=(tx+tz)&1;
+ const g=.62+.55*(noise(u*2.7,v*2.7)*.6+noise(u*9,v*9)*.4),seam=(u/.6-tx<.025||v/.6-tz<.025)?.6:1;
+ cleanBake[j*FW+i]=rgb((k?150:74)*g*seam,(k?142:70)*g*seam,(k?128:64)*g*seam);
+}
+T.floor=(u,v)=>{if(state.cleanup.cleaned.has('spill0'))return cleanBake[clamp(v*FS|0,0,FD-1)*FW+clamp(u*FS|0,0,FW-1)];return originalFloor(u,v);};
+for(const f of faces)if(f.t===originalFloor)f.t=T.floor;
+const stain=solid(94,31,22,.14);
+for(const [index,p] of spills.entries())if(index>0){
+ for(let i=0;i<12;i++){
+  const a=i/12*Math.PI*2,b=(i+1)/12*Math.PI*2,r1=.33+.10*Math.sin(i*2.6),r2=.33+.10*Math.sin((i+1)*2.6);
+  quad([[p.x,.015,p.z],[p.x+Math.cos(a)*r1,.015,p.z+Math.sin(a)*r1],[p.x+Math.cos(b)*r2,.015,p.z+Math.sin(b)*r2],[p.x,.015,p.z]],[[0,0],[1,0],[1,1],[0,0]],stain,[0,1,0],{vis:()=>state.cleanup.mode&&!state.cleanup.cleaned.has(p.id)});
+ }
+}
+// След волочения от прохода к пледу. Убирается вместе с кухонным пятном.
+const trailMat=solid(117,18,19,.1);
+for(let i=0;i<19;i++){
+ const t=i/18,x=7.85-1.0*t,z=2.75-1.62*t,wig=.07*Math.sin(i*1.7);
+ for(const side of [-1,1]){
+  const w=.045+.025*h2(i,side+4),l=.13+.11*h2(i,6);
+  quad([[x-w,.024,z-l+wig+side*.10],[x+w,.024,z-l+wig+side*.10],[x+w*.7,.024,z+l+wig+side*.10],[x-w*.7,.024,z+l+wig+side*.10]],[[0,0],[1,0],[1,1],[0,1]],trailMat,[0,1,0],{vis:()=>!state.cleanup.cleaned.has('spill0')});
+ }
+}
+const bundleMat=T.drape;
+const bundleSources=[{x:5.95,z:1},{x:6.65,z:1},{x:7.3,z:1}];
+const bundlePlaces=[{x:12.75,z:9.2},{x:13.15,z:9.2},{x:13.55,z:9.2}];
+for(let i=0;i<3;i++){
+ const q=bundleSources[i],d=bundlePlaces[i];let at=faces.length;
+ ellipsoid(q.x,.16,q.z,.32,.16,.27,bundleMat,12,6);
+ for(const f of faces.slice(at))f.vis=()=>state.cleanup.mode&&state.cleanup.prepared&&!state.cleanup.hiddenParts?.includes(i)&&state.cleanup.part!==i;
+ at=faces.length;ellipsoid(d.x,.16,d.z,.25,.16,.3,bundleMat,12,6);
+ for(const f of faces.slice(at))f.vis=()=>state.cleanup.hiddenParts?.includes(i);
+}
+box(13.15,.015,9.2,1.4,.02,.8,0,T.paper,{vis:()=>state.cleanup.mode&&state.cleanup.prepared&&(state.cleanup.hiddenParts?.length||0)<3});
+// Нож — условный предмет, действие с ним не показывается.
+const knifeVis=()=>!state.cleanup.knife;
+box(3.15,.79,2.46,.08,.035,.18,0,T.wood,{vis:knifeVis});
+box(3.15,.79,2.23,.08,.025,.28,0,T.handle,{vis:knifeVis});
+
+
+// Плоский пиксельный персонаж; прозрачные пиксели не закрывают сцену.
+const officerCanvas=document.createElement('canvas');officerCanvas.width=32;officerCanvas.height=64;
+const ox=officerCanvas.getContext('2d');
+function pixel(x,y,w,h,c){ox.fillStyle=c;ox.fillRect(x,y,w,h);}
+pixel(10,55,5,8,'#15191a');pixel(18,55,5,8,'#15191a');pixel(9,61,7,3,'#090d0e');pixel(18,61,8,3,'#090d0e');
+pixel(9,28,15,29,'#26383d');pixel(6,30,5,19,'#30454a');pixel(23,30,4,20,'#22363b');pixel(7,49,4,5,'#9b9980');pixel(23,49,4,5,'#aaa48a');
+pixel(14,28,4,22,'#111d24');pixel(9,45,15,3,'#10191b');pixel(17,45,3,2,'#817c50');pixel(10,34,3,3,'#a5a276');
+pixel(12,12,10,16,'#a3a68e');pixel(11,17,12,7,'#858c7a');pixel(12,18,11,3,'#252e2e');pixel(16,23,4,2,'#555e54');
+pixel(10,10,14,6,'#263b42');pixel(8,15,17,3,'#101e25');pixel(16,11,3,3,'#a2a175');
+const officerPixels=ox.getImageData(0,0,32,64).data;
+T.officer=(u,v)=>{const i=(clamp((1-v)*63|0,0,63)*32+clamp(u*31|0,0,31))*4;return officerPixels[i+3]<128?-1:rgb(officerPixels[i],officerPixels[i+1],officerPixels[i+2]);};
+quad([[10.4,0,4.3],[11.2,0,4.3],[11.2,1.85,4.3],[10.4,1.85,4.3]],[[0,0],[1,0],[1,1],[0,1]],T.officer,[0,0,-1],{vis:()=>state.visit.mode&&!['door','diary','done'].includes(state.visit.phase)});
+const officerFace=faces[faces.length-1];
+box(2.55,.80,2.62,.26,.035,.19,0,T.wood,{vis:()=>state.visit.mode&&state.visit.phase==='diary'});
+box(2.55,.836,2.62,.22,.005,.16,0,T.paper,{vis:()=>state.visit.mode&&state.visit.phase==='diary'});
+
+/* ---------- рендер ---------- */
+function clipNear(poly,n){
+  const o=[];
+  for(let i=0;i<poly.length;i++){
+    const a=poly[i],b=poly[(i+1)%poly.length],ai=a.z>=n,bi=b.z>=n;
+    if(ai)o.push(a);
+    if(ai!==bi){const t=(n-a.z)/(b.z-a.z);o.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:n,u:a.u+(b.u-a.u)*t,v:a.v+(b.v-a.v)*t});}
+  }
+  return o;
+}
+function tri(a,b,c,tex,shade){
+  const minX=Math.max(0,Math.floor(Math.min(a.x,b.x,c.x))),maxX=Math.min(W-1,Math.ceil(Math.max(a.x,b.x,c.x)));
+  const minY=Math.max(0,Math.floor(Math.min(a.y,b.y,c.y))),maxY=Math.min(H-1,Math.ceil(Math.max(a.y,b.y,c.y)));
+  const area=(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);if(Math.abs(area)<1e-7)return;
+  const ia=1/area;
+  for(let y=minY;y<=maxY;y++){
+    const py=y+0.5;
+    for(let x=minX;x<=maxX;x++){
+      const px=x+0.5;
+      const w0=((b.x-px)*(c.y-py)-(b.y-py)*(c.x-px))*ia;if(w0<0)continue;
+      const w1=((c.x-px)*(a.y-py)-(c.y-py)*(a.x-px))*ia;if(w1<0)continue;
+      const w2=1-w0-w1;if(w2<0)continue;
+      const iz=w0*a.iz+w1*b.iz+w2*c.iz,idx=y*W+x;if(iz<=zb[idx])continue;
+      const z=1/iz;
+      const col=tex((w0*a.uz+w1*b.uz+w2*c.uz)*z,(w0*a.vz+w1*b.vz+w2*c.vz)*z);
+      if(col===-1)continue;zb[idx]=iz;
+      let r=((col>>16)&255)*shade,g=((col>>8)&255)*shade,bl=(col&255)*shade;
+      cb[idx]=((r>255?255:r)<<16)|((g>255?255:g)<<8)|(bl>255?255:bl);
+    }
+  }
+}
+function renderScene(){
+  zb.fill(0);cb.fill(0);
+  const cs=Math.cos(cam.yaw),sn=Math.sin(cam.yaw),f=W/2/Math.tan(cam.fov/2),hz=H/2,cp=Math.cos(cam.pitch),spitch=Math.sin(cam.pitch);
+  for(const fc of faces){
+    if(fc.vis&&!fc.vis())continue;
+    let poly=[];
+    for(let k=0;k<4;k++){
+      const dx=fc.P[k][0]-cam.x,dy=fc.P[k][1]-cam.y,dz=fc.P[k][2]-cam.z;
+      const forward=dx*sn+dz*cs;poly.push({x:dx*cs-dz*sn,y:dy*cp-forward*spitch,z:forward*cp+dy*spitch,u:fc.UV[k][0],v:fc.UV[k][1]});
+    }
+    poly=clipNear(poly,0.05);if(poly.length<3)continue;
+    const sp=poly.map(p=>({x:W/2+f*p.x/p.z,y:hz-f*p.y/p.z,iz:1/p.z,uz:p.u/p.z,vz:p.v/p.z}));
+    for(let i=1;i<sp.length-1;i++)tri(sp[0],sp[i],sp[i+1],fc.t,fc.shade);
+  }
+}
+
+/* ---------- постобработка: свет, дизеринг, мерцание ---------- */
+const vig=new Float32Array(W*H);
+for(let y=0;y<H;y++)for(let x=0;x<W;x++){const nx=(x/W-.5)*2,ny=(y/H-.5)*2;vig[y*W+x]=Math.max(.2,1-.34*(nx*nx+ny*ny));}
+const BAY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16);
+function post(){
+  const q=12,lamp=state.lamp,strobe=false;
+  for(let y=0;y<H;y++){
+    let sh=0;if(strobe&&Math.random()<.3)sh=((Math.random()-.5)*18)|0;
+    const scan=(y&1)?.93:1;
+    for(let x=0;x<W;x++){
+      let sx=x+sh;if(sx<0)sx+=W;else if(sx>=W)sx-=W;
+      const i=y*W+sx,col=cb[i],iz=zb[i],z=iz>0?1/iz:30;
+      let lt=1.34-.075*z;lt=lt<.27?.27:lt>1?1:lt;
+      lt*=lamp*vig[y*W+x]*scan*state.brightness*.85;
+      let r=((col>>16)&255)/255*lt,g=((col>>8)&255)/255*lt,b=(col&255)/255*lt;
+      const lum=.3*r+.59*g+.11*b;
+      r=lum+(r-lum)*.8;g=lum+(g-lum)*.8;b=lum+(b-lum)*.8;
+      r*=.93;g*=1.01;b*=.86;
+      if(strobe){r=(r-.22)*1.6+.28;g=(g-.22)*1.3+.18;b=(b-.22)*1.3+.18;}
+      const n=(Math.random()-.5)*.012,t=BAY[(y&3)*4+(x&3)];
+      r=Math.floor(clamp(r+n,0,1)*q+t)/q;g=Math.floor(clamp(g+n,0,1)*q+t)/q;b=Math.floor(clamp(b+n,0,1)*q+t)/q;
+      out32[y*W+x]=0xFF000000|((b*255+.5|0)<<16)|((g*255+.5|0)<<8)|(r*255+.5|0);
+    }
+  }
+}
+
+/* ---------- расширение дома: мастерская и подвал ---------- */
+T.workFloor=(u,v)=>{const g=.65+.22*noise(u*14,v*14);return rgb(105*g,100*g,82*g);};
+T.concrete=(u,v)=>{const g=.65+.25*noise(u*21,v*21),s=Math.abs((v*3)%1)<.025?.65:1;return rgb(97*g*s,110*g*s,101*g*s);};
+T.metal=solid(68,83,80,.18);T.reel=solid(158,153,123,.08);T.black=solid(19,27,25,.05);
+slab(15,6,18,10,T.workFloor);wall('z',10,15,18,T.hallWall);wall('x',18,6,10,T.concrete,portals[5]);
+// Рабочий стол, сканер, очки, инструментальная панель, магнитофон.
+box(16.9,0,9.35,1.85,.85,.65,0,T.wood);box(16.9,.85,9.35,.8,.15,.45,0,T.metal);
+for(const x of [16.67,17.08])box(x,.94,9.56,.22,.03,.13,0,T.handle);
+box(16.88,.94,9.56,.2,.025,.025,0,T.handle);
+box(15.15,1.1,7.6,.12,1.1,1.5,0,T.wood);
+for(let i=0;i<7;i++)box(15.23,1.25+(i%2)*.28,7.0+i*.18,.045,.25,.05,0,T.metal);
+box(15.65,0,9.35,.6,1.7,.55,0,T.wood);
+for(let i=0;i<4;i++)box(15.65,.28+i*.35,9.65,.49,.25,.03,0,T.crate);
+box(16.5,2.45,8.1,.45,.1,.45,0,T.lamp,{emis:true});
+box(17.48,.86,9.19,.32,.065,.19,0,T.black,{vis:()=>!arc.tape});box(17.48,.925,9.19,.21,.006,.10,0,T.paper,{vis:()=>!arc.tape});
+// Комод Нины в гостиной и шкаф, в который можно укрыться.
+box(14.85,0,5.45,1.25,1.0,.55,0,T.wood,{vis:()=>arc.active});
+for(const y of [.18,.48,.78]){box(14.85,y,5.16,1.12,.24,.035,0,T.chairWood,{vis:()=>arc.active});box(14.85,y+.11,5.12,.19,.03,.04,0,T.handle,{vis:()=>arc.active});}
+box(8.45,.65,4.8,.58,1.55,1.4,0,T.wood,{vis:()=>arc.active&&!arc.hidden});
+for(const z of [4.48,5.13])box(8.77,.76,z,.035,1.34,.6,0,T.chairWood,{vis:()=>arc.active&&!arc.hidden});
+box(8.8,1.35,4.8,.04,.09,.11,0,T.handle,{vis:()=>arc.active&&!arc.hidden});
+// Спуск физически ниже уровня дома: десять ступеней, камера следует высоте пола.
+for(let i=0;i<10;i++){
+ const x=18+i*.2,y=-(i+1)*.18;
+ box(x+.1,y-.14,8.5,.2,.14,1.4,0,T.concrete);
+}
+for(const z of [7.8,9.2]){
+ quad([[18,0,z],[20,-1.8,z],[20,1.0,z],[18,2.6,z]],[[0,0],[2,0],[2,2.8],[0,2.6]],T.concrete,[0,0,z===7.8?1:-1]);
+}
+quad([[18,2.6,7.8],[20,1.0,7.8],[20,1.0,9.2],[18,2.6,9.2]],[[0,0],[2,0],[2,1.4],[0,1.4]],T.ceil,[0,-1,0]);
+const YB=-1.8;
+quad([[20,YB,6],[26,YB,6],[26,YB,12],[20,YB,12]],[[0,0],[6,0],[6,6],[0,6]],T.workFloor,[0,1,0]);
+quad([[20,1.0,6],[26,1.0,6],[26,1.0,12],[20,1.0,12]],[[0,0],[6,0],[6,6],[0,6]],T.ceil,[0,-1,0]);
+function cellarWall(a,b){quad([[a[0],YB,a[1]],[b[0],YB,b[1]],[b[0],1,b[1]],[a[0],1,a[1]]],[[0,0],[Math.hypot(b[0]-a[0],b[1]-a[1]),0],[Math.hypot(b[0]-a[0],b[1]-a[1]),2.8],[0,2.8]],T.concrete,[0,0,1]);}
+cellarWall([20,6],[26,6]);cellarWall([26,6],[26,12]);cellarWall([26,12],[20,12]);cellarWall([20,6],[20,7.8]);cellarWall([20,9.2],[20,12]);
+// Экран, проектор, шкаф с архивом. Оружие в этой части не используется.
+box(23.3,YB,6.5,2,.72,.65,0,T.wood);
+box(23.3,YB+.72,6.5,.6,.4,.4,0,T.metal);
+for(const x of [23.08,23.5])ellipsoid(x,YB+1.27,6.5,.19,.19,.055,T.reel,12,4);
+box(23.3,YB+.91,6.87,.12,.13,.25,0,T.handle);
+quad([[21.7,-1.25,11.97],[24.4,-1.25,11.97],[24.4,.65,11.97],[21.7,.65,11.97]],[[0,0],[1,0],[1,1],[0,1]],T.paper,[0,0,-1]);
+box(25.45,YB,10.6,.75,1.8,1.7,0,T.wood);
+for(const y of [-1.45,-.85,-.25]){box(25.2,y,10.6,.9,.045,1.7,0,T.metal);for(let j=0;j<3;j++)box(25.2,y+.06,10.05+j*.48,.36,.12,.3,0,T.reel);}
+box(21,YB,10.7,.9,.8,.65,0,T.wood);box(21,YB+.8,10.7,.5,.15,.33,0,T.black);
+box(25.3,YB,6.8,.75,.7,.65,0,T.wood);box(25.3,YB+.7,6.8,.4,.08,.29,0,T.paper);
+box(22,0.86,8.4,.4,.1,.4,0,T.lamp,{emis:true});
+// Рисунок — внутриигровая улика с заданной подписью.
+const dc=document.createElement('canvas');dc.width=128;dc.height=96;const dcx=dc.getContext('2d');
+dcx.fillStyle='#b7ad87';dcx.fillRect(0,0,128,96);dcx.strokeStyle='#4c5044';dcx.lineWidth=2;
+for(const [x,y,sc] of [[38,35,1],[85,27,1.5]]){dcx.beginPath();dcx.arc(x,y,7*sc,0,Math.PI*2);dcx.moveTo(x,y+7*sc);dcx.lineTo(x,y+24*sc);dcx.moveTo(x-9*sc,y+15*sc);dcx.lineTo(x+9*sc,y+15*sc);dcx.moveTo(x,y+24*sc);dcx.lineTo(x-7*sc,y+33*sc);dcx.moveTo(x,y+24*sc);dcx.lineTo(x+7*sc,y+33*sc);dcx.stroke();}
+dcx.fillStyle='#3c453d';dcx.font='11px monospace';dcx.fillText('Тёма и Сторож',15,87);
+const dp=dcx.getImageData(0,0,128,96).data;
+T.drawing=(u,v)=>{const i=(clamp((1-v)*95|0,0,95)*128+clamp(u*127|0,0,127))*4;return rgb(dp[i],dp[i+1],dp[i+2]);};
+quad([[25.97,-.85,7.3],[25.97,-.85,8.3],[25.97,-.12,8.3],[25.97,-.12,7.3]],[[0,0],[1,0],[1,1],[0,1]],T.drawing,[-1,0,0]);
+// Пиксельный Сторож: силуэт, длинные руки, отсутствующий взгляд; без травм.
+const sc=document.createElement('canvas');sc.width=32;sc.height=64;const sx=sc.getContext('2d');
+sx.fillStyle='#2e3a30';sx.fillRect(9,19,15,34);sx.fillRect(5,24,5,33);sx.fillRect(24,24,4,33);sx.fillRect(10,50,5,14);sx.fillRect(19,50,5,14);
+sx.fillStyle='#8b967b';sx.fillRect(10,5,14,16);sx.fillStyle='#121d1a';sx.fillRect(12,10,4,4);sx.fillRect(19,10,4,4);sx.fillRect(14,17,8,2);sx.fillStyle='#673936';sx.fillRect(9,21,16,4);
+const spx=sx.getImageData(0,0,32,64).data;
+T.stor=(u,v)=>{const i=(clamp((1-v)*63|0,0,63)*32+clamp(u*31|0,0,31))*4;return spx[i+3]<128?-1:rgb(spx[i],spx[i+1],spx[i+2]);};
+quad([[9,0,3],[10,0,3],[10,2.05,3],[9,2.05,3]],[[0,0],[1,0],[1,1],[0,1]],T.stor,[0,0,1],{vis:()=>arc.active&&((arc.part===6&&arc.step==='hide')||(arc.part===7&&arc.step==='confront'))});
+const storFace=faces[faces.length-1];
+
+// Вера: собственный пиксельный силуэт; не повторяет спрайт Сторожа.
+const vc=document.createElement('canvas');vc.width=40;vc.height=80;const vctx=vc.getContext('2d');
+vctx.fillStyle='#42433a';vctx.fillRect(10,6,21,20);vctx.fillStyle='#b5b197';vctx.fillRect(14,10,14,18);vctx.fillStyle='#78806a';vctx.fillRect(9,28,23,36);vctx.fillStyle='#a0a38a';vctx.fillRect(17,29,7,25);vctx.fillStyle='#4d6255';vctx.fillRect(10,35,8,25);vctx.fillRect(25,35,6,25);vctx.fillStyle='#747c64';vctx.fillRect(5,31,6,31);vctx.fillRect(32,31,5,31);vctx.fillStyle='#b5b197';vctx.fillRect(5,61,6,6);vctx.fillRect(32,61,5,6);vctx.fillStyle='#293d34';vctx.fillRect(12,64,7,14);vctx.fillRect(24,64,7,14);vctx.fillStyle='#181f1b';vctx.fillRect(10,76,10,4);vctx.fillRect(23,76,10,4);vctx.fillRect(15,16,5,3);vctx.fillRect(23,16,5,3);vctx.fillRect(20,17,3,1);vctx.fillStyle='#bcb7a0';vctx.fillRect(9,10,5,11);vctx.fillRect(29,9,3,16);
+const vp=vctx.getImageData(0,0,40,80).data;
+T.veraPerson=(u,v)=>{const i=(clamp((1-v)*79|0,0,79)*40+clamp(u*39|0,0,39))*4;return vp[i+3]<128?-1:rgb(vp[i],vp[i+1],vp[i+2]);};
+quad([[9,0,0],[10,0,0],[10,1.75,0],[9,1.75,0]],[[0,0],[1,0],[1,1],[0,1]],T.veraPerson,[0,0,1],{vis:()=>arc.active&&arc.part===8&&arc.finale&&arc.finale.phase!=='waiting'&&!arc.failure});
+const veraFace=faces[faces.length-1];
+// Реальный предмет для восстановления света, на стене, не в дверном проходе.
+box(15.13,1.12,7.1,.16,.47,.32,0,T.metal,{vis:()=>arc.active});box(15.225,1.28,7.1,.035,.16,.08,0,T.handle,{vis:()=>arc.active});
+
+// Предметы финальной сверки остаются видимыми после просмотра кассеты.
+const finalPaperVisible=()=>arc.active&&arc.part===8&&arc.step==='evidence08'&&!arc.finale.evidence.includes('folder');
+box(16.3,1.005,5.4,.5,.025,.31,0,T.paper,{vis:finalPaperVisible});
+box(16.3,1.031,5.4,.33,.005,.23,0,T.black,{vis:finalPaperVisible});
+const finalTapeVisible=()=>arc.active&&arc.part===8&&arc.step==='evidence08'&&!arc.finale.evidence.includes('tape');
+box(17.48,.86,9.19,.32,.065,.19,0,T.black,{vis:finalTapeVisible});box(17.48,.925,9.19,.21,.006,.10,0,T.paper,{vis:finalTapeVisible});
+
+/* ---------- звук (всё синтезируется кодом) ---------- */
+let ac=null,master=null,droneG=null,echoIn=null,noiseBuf=null;
+function initAudio(){
+  try{
+    const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    ac=new AC();master=ac.createGain();master.gain.value=0.9;master.connect(ac.destination);
+    noiseBuf=ac.createBuffer(1,ac.sampleRate*2,ac.sampleRate);
+    const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;
+    echoIn=ac.createGain();const dl=ac.createDelay(1.0);dl.delayTime.value=0.31;
+    const fb=ac.createGain();fb.gain.value=0.3;const lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=800;
+    echoIn.connect(dl);dl.connect(lp);lp.connect(fb);fb.connect(dl);lp.connect(master);
+    droneG=ac.createGain();droneG.gain.value=0.5;droneG.connect(master);
+    const mk=(type,freq,gain,cut)=>{const o=ac.createOscillator();o.type=type;o.frequency.value=freq;
+      const g=ac.createGain();g.gain.value=gain;let n=o;
+      if(cut){const f=ac.createBiquadFilter();f.type='lowpass';f.frequency.value=cut;o.connect(f);n=f;}
+      n.connect(g);g.connect(droneG);o.start();return o;};
+    mk('sine',41,0.22);mk('sine',42.3,0.2);mk('sawtooth',82.5,0.05,180);mk('square',100,0.012,260);
+    mk('sine',311,0.006);mk('sine',313.6,0.006);
+    const ns=ac.createBufferSource();ns.buffer=noiseBuf;ns.loop=true;
+    const bp=ac.createBiquadFilter();bp.type='bandpass';bp.frequency.value=420;bp.Q.value=0.8;
+    const wg=ac.createGain();wg.gain.value=0.05;ns.connect(bp);bp.connect(wg);wg.connect(droneG);ns.start();
+    const lfo=ac.createOscillator();lfo.frequency.value=0.13;const lg=ac.createGain();lg.gain.value=180;
+    lfo.connect(lg);lg.connect(bp.frequency);lfo.start();
+  }catch(e){ac=null;}
+}
+function burst(o){
+  if(!ac||state.muted)return;
+  const dur=o.dur||0.12,t=ac.currentTime+(o.when||0),s=ac.createBufferSource();s.buffer=noiseBuf;
+  const f=ac.createBiquadFilter();f.type=o.type||'bandpass';f.frequency.value=o.freq||200;f.Q.value=o.q||1;
+  const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(o.gain||0.3,t+(o.attack||0.005));
+  g.gain.exponentialRampToValueAtTime(0.0008,t+dur);
+  s.connect(f);f.connect(g);let node=g;
+  if(ac.createStereoPanner){const p=ac.createStereoPanner();p.pan.value=o.pan||0;g.connect(p);node=p;}
+  node.connect(master);if(o.echo!==false&&echoIn)node.connect(echoIn);
+  s.start(t,Math.random()*1.5);s.stop(t+dur+0.05);
+}
+const sfxStep=()=>burst({dur:.11,freq:170,q:.9,gain:.35,pan:(Math.random()-.5)*.3});
+let phoneNodes=[];
+function stopPhoneSound(){for(const n of phoneNodes)try{n.stop();}catch(e){}phoneNodes=[];}
+function sfxPhoneRing(){
+ state.ringsPlayed++;if(!ac||state.muted)return;stopPhoneSound();const t=ac.currentTime;
+ for(const off of [0,.46])for(const freq of [1030,1390]){
+  const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=freq;
+  g.gain.setValueAtTime(.0001,t+off);g.gain.linearRampToValueAtTime(.035,t+off+.015);g.gain.setValueAtTime(.035,t+off+.29);g.gain.exponentialRampToValueAtTime(.0001,t+off+.37);
+  o.connect(g);g.connect(master);o.start(t+off);o.stop(t+off+.4);phoneNodes.push(o);
+ }
+}
+function phoneReady(){return state.visited.size===5&&state.examined.has('musicbox')&&state.faucet&&state.cratePlaced;}
+function maybeRingPhone(dt=0){
+ if(!state.started||state.paused||state.cleanup.mode||state.visit.mode||state.phoneDone)return;
+ if(!state.phoneRinging&&phoneReady()&&!dialogue.active){state.phoneRinging=true;state.phoneRingTimer=4;sfxPhoneRing();say([G('Телефон. Из прихожей… Сейчас?'),G('Я только что прошёл весь дом. Кто мог знать, что я здесь?')]);}
+ else if(state.phoneRinging){state.phoneRingTimer-=dt;if(state.phoneRingTimer<=0){state.phoneRingTimer=4;sfxPhoneRing();}}
+}
+function sfxPhantom(){const side=Math.random()<.5?-.85:.85;for(let i=0;i<3;i++)burst({dur:.12,freq:150,q:.9,gain:.22,pan:side,when:i*.56});}
+function sfxWhisper(){const p=(Math.random()-.5)*1.6;burst({dur:.7,freq:2200,q:3,gain:.12,attack:.15,pan:p});burst({dur:.55,freq:1500,q:4,gain:.09,attack:.2,pan:p,when:.25});}
+function duck(){if(!ac||!droneG)return;const t=ac.currentTime;droneG.gain.cancelScheduledValues(t);droneG.gain.setValueAtTime(0,t);droneG.gain.setValueAtTime(0,t+.35);droneG.gain.linearRampToValueAtTime(.5,t+1.5);}
+function sfxSting(){
+  if(!ac||state.muted)return;
+  const t=ac.currentTime;
+  [[740,180,'sawtooth',.16],[1111,200,'sine',.12]].forEach(a=>{
+    const o=ac.createOscillator();o.type=a[2];o.frequency.setValueAtTime(a[0],t);o.frequency.exponentialRampToValueAtTime(a[1],t+.4);
+    const g=ac.createGain();g.gain.setValueAtTime(a[3],t);g.gain.exponentialRampToValueAtTime(.001,t+.5);
+    o.connect(g);g.connect(master);o.start(t);o.stop(t+.55);
+  });
+  burst({dur:.35,type:'highpass',freq:2500,q:.7,gain:.3});
+  duck();
+}
+function sfxHeart(){
+  if(!ac||state.muted)return;
+  [0,.19].forEach((w,i)=>{const t=ac.currentTime+w,o=ac.createOscillator();o.frequency.setValueAtTime(i?48:58,t);
+    o.frequency.exponentialRampToValueAtTime(30,t+.14);const g=ac.createGain();
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(i?.25:.38,t+.015);g.gain.exponentialRampToValueAtTime(.001,t+.16);
+    o.connect(g);g.connect(master);o.start(t);o.stop(t+.2);});
+}
+
+/* ---------- текст и осмотр ---------- */
+const lineEl=$('line'),promptEl=$('prompt'),countEl=$('count'),hintEl=$('hint');
+// Таймеры считают только активное игровое время: пауза не съедает реплики.
+let playClock=0;const timers=[];
+function schedule(fn,ms){timers.push({at:playClock+ms/1000,fn});}
+const typedEl=$('typed'),speakerEl=$('speaker'),dialogHint=$('dialogHint'),caret=$('caret');
+const dialogue={active:false,seq:[],index:0,chars:[],shown:0,nextChar:0,holdUntil:0,ready:false,onDone:null,lastTick:-1,ticks:0};
+const VOICES={g:{label:'ГЛЕБ · ПРО СЕБЯ',speed:1,freq:760,shape:'triangle'},
+  s:{label:'СТОРОЖ',speed:.72,freq:170,shape:'sine'},
+  p:{label:'ПОЛИЦЕЙСКИЙ',speed:1.13,freq:430,shape:'triangle'}};
+function textTick(ch){
+  const stor=dialogue.voice==='s',interval=stor?.087:.058;
+  if(!ac||state.muted||!state.textSound||!/[а-яёa-z0-9]/i.test(ch)||playClock-dialogue.lastTick<interval)return;
+  dialogue.lastTick=playClock;dialogue.ticks++;
+  const t=ac.currentTime,v=state.textVolume,variant=(ch.codePointAt(0)%5)/5;
+  // Тракт текста отделён от гула: ограниченная полоса + отчётливый транзиент.
+  function tone(type,freq,target,level,duration,when=0){
+    const o=ac.createOscillator(),g=ac.createGain();o.type=type;
+    o.frequency.setValueAtTime(freq,t+when);o.frequency.exponentialRampToValueAtTime(target,t+when+duration);
+    g.gain.setValueAtTime(.0001,t+when);g.gain.exponentialRampToValueAtTime(level*v,t+when+.003);
+    g.gain.exponentialRampToValueAtTime(.0001,t+when+duration);o.connect(g);g.connect(master);
+    o.start(t+when);o.stop(t+when+duration+.01);o.onended=()=>{o.disconnect();g.disconnect();};
+  }
+  function click(freq,level,duration){
+    const n=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();n.buffer=noiseBuf;
+    f.type='bandpass';f.frequency.value=freq;f.Q.value=.75;
+    g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(level*v,t+.0015);
+    g.gain.exponentialRampToValueAtTime(.0001,t+duration);n.connect(f);f.connect(g);g.connect(master);
+    n.start(t,variant);n.stop(t+duration+.01);n.onended=()=>{n.disconnect();f.disconnect();g.disconnect();};
+  }
+  if(stor){
+    // Низкий двойной деревянно-электронный стук, а не щелчок Глеба.
+    tone('triangle',240+variant*30,95,.15,.072);
+    tone('sine',380,170,.066,.055,.024);
+    click(650,.065,.022);
+  }else if(dialogue.voice==='p'){
+    tone('square',650+variant*90,420,.028,.023);click(1450,.12,.019);
+  }else{
+    // У Глеба высокий, сухой механический «тик» с широкополосной атакой.
+    click(2900,.24,.023);tone('triangle',1850+variant*220,1000,.065,.026);
+  }
+}
+function showLine(){
+  const item=dialogue.seq[dialogue.index];if(!item){finishDialogue();return;}
+  dialogue.voice=item[1]||'g';const v=VOICES[dialogue.voice]||VOICES.g;
+  dialogue.chars=Array.from(item[0]);dialogue.shown=0;dialogue.ready=false;dialogue.nextChar=playClock+.10;
+  speakerEl.textContent=v.label;typedEl.textContent='';lineEl.className=dialogue.voice==='s'?'stor':dialogue.voice==='p'?'phone':'';
+  lineEl.style.opacity=1;caret.hidden=false;dialogHint.textContent='[E / ПРОБЕЛ] показать фразу целиком';
+}
+function say(seq,idleOnly,onDone){
+  if(idleOnly&&dialogue.active)return;
+  dialogue.active=true;dialogue.seq=seq;dialogue.index=0;dialogue.onDone=onDone||null;showLine();
+}
+function completeLine(){
+  dialogue.shown=dialogue.chars.length;typedEl.textContent=dialogue.chars.join('');dialogue.ready=true;caret.hidden=true;
+  const item=dialogue.seq[dialogue.index];
+  // В автоматическом режиме время на чтение начинается только после появления последней буквы.
+  dialogue.holdUntil=playClock+Math.max(2.2,(item[2]||3200)/1000,dialogue.chars.length*.045);
+  dialogHint.textContent=state.autoText?'[E / ПРОБЕЛ] дальше · автопродолжение включено':'[E / ПРОБЕЛ] дальше';
+}
+function finishDialogue(){
+  dialogue.active=false;lineEl.style.opacity=0;const done=dialogue.onDone;dialogue.onDone=null;if(done)done();
+}
+function advanceDialogue(){
+  if(!dialogue.active)return false;
+  if(!dialogue.ready){completeLine();return true;}
+  dialogue.index++;showLine();return true;
+}
+function updateDialogue(){
+  if(!dialogue.active)return;
+  lineEl.style.opacity=1;
+  if(dialogue.ready){if(state.autoText&&playClock>=dialogue.holdUntil)advanceDialogue();return;}
+  let emitted=0;
+  while(playClock>=dialogue.nextChar&&dialogue.shown<dialogue.chars.length&&emitted<8){
+    const ch=dialogue.chars[dialogue.shown++];emitted++;textTick(ch);
+    const v=VOICES[dialogue.voice]||VOICES.g,base=1/(state.textSpeed*v.speed);
+    const pause=/[.!?…]/.test(ch)?.23:/[,;:—]/.test(ch)?.105:0;
+    dialogue.nextChar+=base+pause;
+  }
+  typedEl.textContent=dialogue.chars.slice(0,dialogue.shown).join('');
+  if(dialogue.shown>=dialogue.chars.length)completeLine();
+}
+function triggerFlash(){state.flashOn=true;state.flashLeft=1.2;if(!state.soft)sfxWhisper();}
+const G=(t,ms)=>[t,'g',ms||3600],S=(t,ms)=>[t,'s',ms||2800];
+const OBJ=[
+  {id:'note',x:2.55,z:2.62,r:2.3,label:'записку',n:0,seqs:[
+    [G('Записка на столе. Мой почерк: «Не трогай пол».',4200),G('Последнюю букву я всегда вывожу иначе.\nПочему здесь — мой почерк?',3800)],
+    [G('«Не трогай пол». Чернила ещё свежие.',3600)]]},
+  {id:'puddle',x:PX,z:PZ,r:2.7,label:'пятно на полу',n:0,seqs:[
+    [G('Пролитый компот? Я мыл пол утром.',3400),G('…Кажется, утром.',2400),S('Оставь. Я уберу.',2600)],
+    [G('Следы тянутся к двери. Что-то тащили.',3800),G('Что-то тяжёлое.',2400)]]},
+  {id:'lump',enabled:()=>!state.cleanup.mode,x:6.9,z:1.0,r:2.6,label:'плед',n:0,flash:false,seqs:[
+    [G('Плед в углу. Лена любила этот плед.',3600),G('Лена уехала… ведь так?',2800),S('Я же просил не смотреть.',3000)],
+    [G('Ни движения. Даже край пледа не шевелится.',3000),S('Не трогай её. Пожалуйста.',3200)]]},
+  {id:'fridge',x:6.9,z:5.2,r:2.6,label:'холодильник',n:0,seqs:[
+    [G('Холодильник гудит. Но дверца тёплая.',3800)],
+    [G('Я отошёл от холодильника.\nГул остался у самого уха.',3600)]]},
+  {id:'window',x:3.2,z:5.9,r:2.6,label:'окно',n:0,seqs:[
+    [G('Темно. Какой сегодня день?',3000),G('В стекле моё лицо. Оно улыбнулось раньше меня.',4200),S('Не смотри в окно. Там только я.',3200)],
+    [G('Я не буду смотреть.',2400)]]},
+  {id:'door',x:7.9,z:2.8,r:2.3,label:'дверь',n:0,seqs:[
+    [G('Заперто. Ключ у меня в кармане.',3200),G('Он липкий.',2400)],
+    [G('Я не помню, как запирал.',3000)]]},
+];
+function boundaryBlocked(x,z,r=0){
+  // Непрерывный контур: дом, мастерская, лестница и нижний этаж.
+  // Проверяем круг игрока по периметру объединения, а не по каждому прямоугольнику:
+  // это не создаёт невидимых порогов на стыках комнат.
+  const inside=(a,b)=>a>=0&&a<=18&&b>=0&&b<=6||a>=8&&a<=18&&b>=6&&b<=10||a>=18&&a<=20&&b>=7.8&&b<=9.2||a>=20&&a<=26&&b>=6&&b<=12;
+  if(!inside(x,z))return true;
+  if(r>0)for(let i=0;i<16;i++){const t=i*Math.PI/8;if(!inside(x+Math.cos(t)*r,z+Math.sin(t)*r))return true;}
+  const barriers=[{axis:'x',at:8,lo:0,hi:6,p:portals[0]},{axis:'x',at:12,lo:0,hi:6,p:portals[1]},
+    {axis:'z',at:6,lo:0,hi:8},{axis:'z',at:6,lo:8,hi:12,p:portals[2]},
+    {axis:'z',at:6,lo:12,hi:15,p:portals[3]},{axis:'z',at:6,lo:15,hi:18,p:portals[4]},
+    {axis:'x',at:12,lo:6,hi:10},{axis:'x',at:15,lo:6,hi:10},
+    {axis:'x',at:18,lo:6,hi:10,p:portals[5]}];
+  for(const b of barriers){const across=b.axis==='x'?x:z,along=b.axis==='x'?z:x;
+    if(Math.abs(across-b.at)<r+.035&&along>=b.lo-r&&along<=b.hi+r){
+      const p=b.p;if(!p||!state[p.key]||along<p.lo+r||along>p.hi-r)return true;
+    }
+  }return false;
+}
+function visibleTo(o){
+  const dx=o.x-cam.x,dz=o.z-cam.z,d=Math.hypot(dx,dz),steps=Math.ceil(d/.06);
+  for(let k=1;k<steps-2;k++){const t=k/steps;if(boundaryBlocked(cam.x+dx*t,cam.z+dz*t,0))return false;}return true;
+}
+function target(){
+ let best=null,bs=.88;const fx=Math.sin(cam.yaw),fz=Math.cos(cam.yaw);
+ for(const o of OBJ){if(arc.active?(!o.arc&&!(o.portal||o.id==='door')):o.arc)continue;if(state.visit.mode&&!o.visit)continue;if(!state.visit.mode&&o.visit)continue;if(!state.visit.mode&&state.cleanup.mode&&!o.cleanup&&!(o.portal||o.id==='door'||o.id==='lump'||o.id==='window'||o.id==='exit'))continue;if(o.enabled&&!o.enabled())continue;const dx=o.x-cam.x,dz=o.z-cam.z,d=Math.hypot(dx,dz)||1;if(d>o.r)continue;const aimY=o.y!==undefined?o.y:o.id.startsWith('spill')?.02:o.id==='lump'||o.id.startsWith('bundle')?.2:o.id==='note'||o.id==='knifePick'||o.id==='diary04'?.8:1.1;if(Math.abs(Math.atan2(aimY-cam.y,d)-cam.pitch)>.85)continue;const c=(dx*fx+dz*fz)/d;
+  if(c>bs&&visibleTo(o)){bs=c;best=o;}}
+ return best;
+}
+function roomName(){if(cam.x>=18)return 'ПОДВАЛ';if(cam.z>6&&cam.x>=15)return 'МАСТЕРСКАЯ';if(cam.z>6)return cam.x<12?'ВАННАЯ':'КЛАДОВАЯ';return cam.x<8?'КУХНЯ':cam.x<12?'ПРИХОЖАЯ':'ГОСТИНАЯ';}
+function refreshObjective(){
+ if(arc.active){arcObjective();return;}
+ if(state.visit.mode){const v=state.visit;$('objective').textContent=v.done?'Часть 04 завершена':v.phase==='door'?'Подойдите к входной двери в прихожей.':v.phase==='diary'?'Запишите случившееся в дневник на кухонном столе.':v.phase==='entering'?'Полицейский входит с крыльца.':v.phase==='leaving'?'Полицейский выходит на улицу.':v.moving?'Следуйте за полицейским.':'Подойдите к полицейскому и нажмите E.';countEl.textContent='04 / '+roomName();$('carryStatus').textContent='';$('visitStatus').hidden=false;$('visitStatus').textContent=v.phase==='diary'?'Полицейский ушёл. Осталась запись.':v.phase==='door'?'За дверью — три удара.':'Полицейский · '+({hall:'прихожая',kitchen:'кухня',bath:'ванная',living:'гостиная',pantry:'кладовая',leave:'у входа'}[visitRoute[v.node]?.area]||'у входа')+' · '+(v.moving?'идёт':'ждёт ответа');return;}
+ const room=roomName();if(state.started)state.visited.add(room);
+ let text='Осмотрите кухню, затем пройдите в прихожую';
+ if(state.doorOpen)text='Осмотрите все 5 комнат: гостиная, ванная, кладовая';
+ if(state.examined.has('musicbox')&&!state.faucet)text='Проверьте кран в ванной · дверь из прихожей';
+ if(state.faucet&&!state.cratePlaced)text='Перенесите ящик из гостиной в кладовую · удерживайте E';
+ if(state.carrying)text='Несите ящик в кладовую · дверь из гостиной';
+ if(state.cratePlaced&&!state.examined.has('musicbox'))text='Осмотрите шкатулку в гостиной';
+ if(state.phoneRinging)text='В прихожей звонит телефон. Ответьте.';
+ if(state.cleanup.mode){const c=state.cleanup;text=c.finished?'Третья часть завершена':!c.knife?'СТОРОЖ · Возьми нож с кухонного стола.':!c.prepared?'СТОРОЖ · Вернись к любимому пледу Лены.':c.hiddenParts.length<3?'СТОРОЖ · Отнеси свёртки на отметку в кладовой.':'СТОРОЖ · Теперь вытри следы. Все шесть.';}
+ $('objective').textContent=text;countEl.textContent=(state.cleanup.mode?'03 / ':'02 / ')+room+' · комнаты '+state.visited.size+'/5';
+ if(state.cleanup.mode){$('carryStatus').textContent=state.cleanup.carried==='bundle'?'В руках: свёрток · в кладовую · R вернуть':state.cleanup.knife?'Нож взят':'';return;}
+ $('carryStatus').textContent=state.carrying?'В руках: ящик · ходьба медленнее · R вернуть':state.cratePlaced?'Ящик в кладовой':'';
+}
+function finishPart(){maybeRingPhone();}
+function interact(){
+  if(!state.started||state.paused||state.cleanup.cutting)return;if(advanceDialogue())return;if(arc.active&&arc.hidden){interactArc(null);return;}const o=target();if(!o)return;if(arc.active){interactArc(o);return;}
+  if(o.visit){interactVisit(o);return;}state.examined.add(o.id);
+  if(o.hold){if((o.id==='crateSpot'||o.id==='bundleSpot')&&Math.hypot(cam.x-o.x,cam.z-o.z)<.88){say([G('Отойду от отметки. Ящик нужно поставить перед собой.')]);return;}if(state.cleanup.mode&&!state.cleanup.running)return;state.hold={id:o.id,t:0,need:o.seconds||1.8};return;}
+  if(o.portal){const p=portals.find(p=>p.id===o.id),across=p.axis==='x'?cam.x:cam.z;
+    if(state[p.key]&&Math.abs(across-p.at)<.65){say([G('Нужно отойти от проёма.')]);return;}
+    state[p.key]=!state[p.key];burst({dur:.22,freq:300,gain:.13});return;
+  }
+  if(o.id==='door'){
+    const near=Math.abs(cam.x-8)<.65 && cam.z>1.7&&cam.z<3.9;
+    if(state.doorOpen&&near){say([G('Нужно отойти от дверного проёма.',1600)]);return;}
+    state.doorOpen=!state.doorOpen;
+    say([G(state.doorOpen?'Ключ липкий. В прихожей пахнет сыростью.':'Дверь закрыта.',2800)]);
+    burst({dur:.25,freq:380,gain:.14});
+  }else if(o.id==='phone'){
+    if(!state.phoneRinging||state.phoneDone)return;
+    state.phoneDone=true;state.phoneRinging=false;stopPhoneSound();
+    say([G('Я снял трубку.'),P('Глеб Сергеевич? Лена не вышла на работу. Максим тоже не отвечает.'),P('Я зайду через сорок пять минут. Нужно поговорить.'),G('Он идёт сюда. Что я должен ему сказать?'),S('Сначала приведи дом в порядок.')],false,()=>beginCleanup(false,true));
+  }else{const k=Math.min(o.n++,o.seqs.length-1);say(o.seqs[k],false,finishIfReady);if(o.flash)schedule(()=>{if(!state.paused)triggerFlash();},650);}
+  refreshObjective();
+}
+OBJ.push(
+{id:'phone',x:11.5,z:1.4,r:1.9,label:'ответить на звонок',n:0,seqs:[],enabled:()=>state.phoneRinging&&!state.phoneDone},
+{id:'clock',x:11.1,z:.1,r:2.1,label:'часы',n:0,seqs:[[G('21:47. Секундная стрелка не двигается.',3400)]]},
+{id:'photo',x:8.7,z:.1,r:1.9,label:'фотографию',n:0,seqs:[[G('Старая фотография. Лица затёрты. Кто это сделал?',3600)]]},
+{id:'exit',x:9.95,z:.08,r:1.8,label:'входную дверь',n:0,seqs:[[G('Входная дверь заперта. Этот ключ не подходит.',3400),S('Не сейчас.',1800)]]}
+);
+OBJ.find(o=>o.id==='door').label='дверь в прихожую';
+OBJ.push(
+ {id:'livingDoor',x:12,z:2.8,r:1.9,label:'открыть / закрыть гостиную',portal:true},
+ {id:'bathDoor',x:9.9,z:6,r:1.9,label:'открыть / закрыть ванную',portal:true},
+ {id:'pantryDoor',x:13.7,z:6,r:1.9,label:'открыть / закрыть кладовую',portal:true},
+ {id:'musicbox',x:15.55,z:3,r:1.8,label:'шкатулку',n:0,seqs:[[G('Шкатулка Лены. Ключ повёрнут до упора.'),G('Она всегда оставляла музыку недоигранной. Чтобы вернуться.'),S('Не заводи её.')],[G('Музыка кончилась. Я всё ещё слышу последнюю ноту.')]]},
+ {id:'tv',x:14.1,z:.65,r:1.8,label:'телевизор',n:0,seqs:[[G('Экран выключен. Но я слышал голоса.'),G('Может, из соседней комнаты.')]]},
+ {id:'faucet',x:11.35,z:8.35,r:1.65,label:'проверить кран',hold:true,seconds:1.5,enabled:()=>!state.faucet},
+ {id:'bathMirror',x:11.85,z:8.35,r:1.9,label:'потускневшее зеркало',n:0,seqs:[[G('Стекло потемнело по краям. Моего лица почти не видно.'),S('Так лучше.')]]},
+ {id:'shelves',x:14.7,z:8.2,r:1.7,label:'коробки на полках',n:0,seqs:[[G('Плёнки. Даты на коробках заканчиваются одним и тем же числом.'),G('Совпадение. Наверное.')]]},
+ {id:'crate',x:13.8,z:3.9,r:1.65,label:'поднять ящик с плёнкой',hold:true,seconds:2,enabled:()=>!state.cleanup.mode&&!state.carrying&&!state.cratePlaced},
+ {id:'crateSpot',x:13.5,z:8.65,r:1.7,label:'поставить ящик на отмеченное место',hold:true,seconds:1.5,enabled:()=>state.carrying}
+);
+function finishIfReady(){maybeRingPhone();}
+function updateHold(dt){
+ const h=state.hold;if(!h)return;
+ const active=keys.KeyE||keys.Space||keys.Enter,o=target();
+ if(!active||dialogue.active||!o||o.id!==h.id){state.hold=null;$('holdUI').hidden=true;return;}
+ h.t+=dt;$('holdUI').hidden=false;$('holdArc').setAttribute('stroke-dashoffset',169.65*(1-clamp(h.t/h.need,0,1)));$('holdLabel').textContent=o.label+' · '+Math.round(h.t/h.need*100)+'%';
+ if(h.t>=h.need){state.hold=null;$('holdUI').hidden=true;
+  if(o.cleanup){completeCleanupAction(o);return;}
+  if(h.id==='crate'){state.carrying=true;say([G('Только старые плёнки. Почему так тяжело?')]);}
+  if(h.id==='crateSpot'){state.carrying=false;state.cratePlaced=true;burst({dur:.18,freq:130,gain:.20});say([G('Здесь. Будто место было приготовлено заранее.')],false,finishIfReady);}
+  if(h.id==='faucet'){state.faucet=true;burst({dur:.6,freq:1800,gain:.07});say([G('Вода ледяная. Кран был открыт, но я не слышал воды.'),S('Теперь слышишь.')],false,finishIfReady);}
+ }
+}
+for(const p of spills)OBJ.unshift({id:p.id,x:p.x,z:p.z,r:1.65,label:'вытереть след · '+p.name,hold:true,seconds:1.8,cleanup:true,enabled:()=>state.cleanup.mode&&state.cleanup.hiddenParts?.length===3&&!state.cleanup.cleaned.has(p.id)&&!state.cleanup.carried});
+OBJ.unshift(
+ {id:'knifePick',x:3.15,z:2.35,r:1.65,label:'взять нож со стола',hold:true,seconds:1,cleanup:true,enabled:()=>state.cleanup.mode&&!state.cleanup.knife},
+ {id:'blanketCut',x:6.7,z:1,r:2.0,label:'разделить любимый плед Лены · сцена за кадром',hold:true,seconds:3,cleanup:true,enabled:()=>state.cleanup.mode&&state.cleanup.knife&&!state.cleanup.prepared&&!state.cleanup.cutting},
+ ...bundleSources.map((q,i)=>({id:'bundlePick'+i,x:q.x,z:q.z,r:1.8,label:'поднять свёрток '+(i+1),hold:true,seconds:1.5,cleanup:true,enabled:()=>state.cleanup.mode&&state.cleanup.prepared&&!state.cleanup.carried&&!state.cleanup.hiddenParts.includes(i)})),
+ {id:'bundleSpot',x:13.15,z:9.2,r:1.9,label:'оставить свёрток на отметке',hold:true,seconds:1.5,cleanup:true,enabled:()=>state.cleanup.mode&&state.cleanup.carried==='bundle'}
+);
+function saveCleanup(){
+ const c=state.cleanup;if(!c.mode||c.finished||c.cutting)return;
+ try{localStorage.setItem('proval031checkpoint',JSON.stringify({version:2,remaining:c.remaining,cleaned:[...c.cleaned],carried:c.carried,knife:c.knife,carryLinePlayed:!!c.carryLinePlayed,prepared:c.prepared,hiddenParts:c.hiddenParts,part:c.part,cam:{x:cam.x,z:cam.z,yaw:cam.yaw,pitch:cam.pitch}}));}catch(e){}
+}
+function beginCleanup(restore=false,keepPosition=false){
+ const oldCam={...cam};state.phoneDone=true;state.phoneRinging=false;stopPhoneSound();
+ state.visit.mode=false;$('visitStatus').hidden=true;$('book04').hidden=true;$('choice04').hidden=true;$('end04').hidden=true;state.ended=false;state.cleanup={mode:true,running:false,finished:false,remaining:+$('difficulty').value,cleaned:new Set(),carried:null,knife:false,prepared:false,hiddenParts:[],part:null,cutting:0,bundle:false};
+ state.carrying=false;state.cratePlaced=false;state.hold=null;state.phoneDone=true;
+ state.doorOpen=true;state.livingOpen=true;state.bathOpen=true;state.pantryOpen=true;
+ dialogue.active=false;dialogue.onDone=null;timers.length=0;lineEl.style.opacity=0;
+ $('endPanel').hidden=true;$('result03').hidden=true;$('cleanupPanel').hidden=false;$('cut03').hidden=true;
+ for(const k in keys)delete keys[k];
+ Object.assign(cam,{x:4.65,z:3.75,yaw:Math.PI,pitch:-.15});
+ let restored=false;
+ if(restore)try{const c=JSON.parse(localStorage.getItem('proval031checkpoint')||'null');
+  if(c&&c.version===2&&Number.isFinite(c.remaining)&&c.remaining>0){
+   state.cleanup.remaining=clamp(c.remaining,1,480);state.cleanup.cleaned=new Set((c.cleaned||[]).filter(id=>spills.some(p=>p.id===id)));
+   state.cleanup.knife=!!c.knife;state.cleanup.carryLinePlayed=!!c.carryLinePlayed;state.cleanup.prepared=!!c.prepared;state.cleanup.hiddenParts=[...new Set((c.hiddenParts||[]).filter(i=>[0,1,2].includes(i)))];
+   state.cleanup.bundle=state.cleanup.hiddenParts.length===3;
+   if(c.carried==='bundle'&&[0,1,2].includes(c.part)&&!state.cleanup.hiddenParts.includes(c.part)){state.cleanup.carried='bundle';state.cleanup.part=c.part;}
+   if(c.cam&&Number.isFinite(c.cam.x)&&Number.isFinite(c.cam.z)){Object.assign(cam,c.cam);if(blocked(cam.x,cam.z))Object.assign(cam,{x:4.65,z:3.75});}restored=true;
+  }
+ }catch(e){}
+ const intro=restored?[S('Мы ещё не закончили.'),S(nextOrder())]:[
+ S('Слушай меня. Возьми нож с кухонного стола.'),
+ G('Зачем?'),
+ S('Раздели любимый плед Лены на части. Потом спрячь.'),
+ G('Ты говоришь о пледе. Только о пледе?..'),
+ S('Не смотри под него. Делай, что я говорю.'),
+ G('Удерживать E — действие. Отпустить — отмена. На паузе и во время чтения отсчёт стоит.')];
+ if(keepPosition)Object.assign(cam,oldCam);say(intro,false,()=>{state.cleanup.running=true;saveCleanup();});updateCleanupHUD();
+}
+function nextOrder(){const c=state.cleanup;return !c.knife?'Нож на кухонном столе. Возьми его.':!c.prepared?'Теперь к пледу. Раздели его.':c.hiddenParts.length<3?'По одному. Свёртки — на отметку в кладовой.':'Теперь следы. Вытри все шесть пятен.';}
+function updateCleanupHUD(){
+ const c=state.cleanup;if(!c.mode)return;
+ const sec=Math.max(0,Math.ceil(c.remaining));$('cleanupClock').textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');$('cleanupClock').className=sec<=60?'urgent':'';
+ $('cleanupList').textContent='Нож: '+(c.knife?'✓':'—')+' · Плед: '+(c.prepared?'✓':'—')+' · Свёртки: '+c.hiddenParts.length+'/3 · Следы: '+c.cleaned.size+'/6';
+}
+function completeCleanupAction(o){
+ const c=state.cleanup;if(!c.running)return;
+ if(o.id==='knifePick'){c.knife=true;say([G('Это кухонный нож. На лезвии я вижу своё отражение.'),S('Теперь к пледу. Не задерживайся.')]);}
+ if(o.id==='blanketCut'){
+  beginFabric();return;
+ }
+ if(o.id.startsWith('bundlePick')){c.part=+o.id.slice(-1);c.carried='bundle';if(!c.carryLinePlayed&&c.hiddenParts.length===0){c.carryLinePlayed=true;say([G('Ткань стянута узлом. Я не хочу знать, что внутри.'),S('В кладовую. На свободное место у дальней стены.')]);}}
+ if(o.id==='bundleSpot'){c.hiddenParts.push(c.part);c.carried=null;c.part=null;c.bundle=c.hiddenParts.length===3;burst({dur:.2,freq:120,gain:.15});
+  if(c.bundle)say([S('Хорошо. Теперь следы на полу. Все шесть.'),G('Они тянутся к её пледу. Её тащили?'),S('Не вспоминай. Вытирай.')]);}
+ if(o.id.startsWith('spill')){c.cleaned.add(o.id);burst({dur:.17,freq:1200,gain:.10,echo:false});
+  if(c.cleaned.size===1)say([G('Вода краснеет. Это не компот.'),S('Не называй это. Дальше.')]);
+  if(c.cleaned.size===4)say([S('Ещё два. Ты справляешься.')]);
+ }
+ saveCleanup();updateCleanupHUD();
+ if(c.cleaned.size===6&&c.bundle){c.running=false;c.finished=true;
+  try{localStorage.removeItem('proval031checkpoint');}catch(e){}
+  say([G('Её пледа больше нет.'),S('Теперь здесь порядок.'),G('За входной дверью скрипнула доска.')],false,()=>cleanupResult(true));
+ }
+}
+function cleanupResult(success){
+ const c=state.cleanup;c.running=false;c.finished=true;state.hold=null;$('holdUI').hidden=true;promptEl.style.opacity=0;
+ if(success){beginVisit(true,false,true);return;}
+ say([G('Не успел. За дверью уже шаги.'),S('Отойди от пола. Он пришёл.')],false,()=>beginVisit(true,false,true));
+}
+let checkpointCooldown=10;
+function updateCleanup(dt){
+ const c=state.cleanup;if(!c.mode)return;
+ if(state.visit.mode)return;
+ if(c.cutting){drawFabric();updateCleanupHUD();return;}
+ if(c.running&&!state.paused&&!dialogue.active){c.remaining=Math.max(0,c.remaining-dt);checkpointCooldown-=dt;
+  if(checkpointCooldown<=0){saveCleanup();checkpointCooldown=10;}
+  if(c.remaining<=0)cleanupResult(false);
+ }
+ // Фильтр меняет только слово, без вспышек изображения и без откровенных деталей.
+ for(const p of spills){const o=OBJ.find(o=>o.id===p.id);o.label=(state.flashOn?'убрать пятно':'убрать разлитое')+' · '+p.name;}
+ updateCleanupHUD();
+}
+/* ---------- интерактивная ткань: без изображения тела ---------- */
+const fabric={strokes:0,lastDir:0,travel:0,lastY:null,offset:0,lastSound:0};
+function beginFabric(){
+ state.cleanup.cutting=1;Object.assign(fabric,{strokes:0,lastDir:0,travel:0,lastY:null,offset:0,lastSound:-1});
+ for(const k in keys)delete keys[k];$('cut03').hidden=false;promptEl.style.opacity=0;document.exitPointerLock?.();drawFabric();
+}
+function fabricMotion(dy){
+ if(!state.cleanup.cutting||state.paused||!Number.isFinite(dy)||Math.abs(dy)<1)return;
+ const d=Math.sign(dy);fabric.offset=clamp(fabric.offset+dy*.14,-14,14);
+ if(d!==fabric.lastDir){fabric.travel+=Math.min(Math.abs(dy),80);if(fabric.travel>=38){fabric.strokes++;fabric.lastDir=d;fabric.travel=0;
+  // Сухой треск ткани и низкий скрежет, без натуралистичных звуков травм.
+  burst({dur:.21,freq:1850,q:.7,gain:.16,echo:false});burst({dur:.19,freq:310,q:2,gain:.065,echo:false});
+ }}else fabric.travel=0;
+ drawFabric();if(fabric.strokes>=8)finishFabric();
+}
+function drawFabric(){
+ const x=$('fabricCanvas').getContext('2d'),w=320,h=160,off=state.soft?0:fabric.offset;
+ x.fillStyle='#050907';x.fillRect(0,0,w,h);x.save();x.translate(0,off);
+ x.fillStyle='#343d30';x.beginPath();x.moveTo(34,48);x.lineTo(257,30);x.lineTo(292,126);x.lineTo(55,139);x.closePath();x.fill();
+ for(let i=0;i<30;i++){x.strokeStyle=i%3?'#4a5140':'#666b51';x.beginPath();x.moveTo(37+i*7,49);x.lineTo(60+i*7,135);x.stroke();}
+ for(let i=0;i<11;i++){x.strokeStyle='#252e25';x.beginPath();x.moveTo(40,56+i*7);x.lineTo(277,40+i*7);x.stroke();}
+ x.strokeStyle='#020504';x.lineWidth=3;const len=fabric.strokes/8*100;
+ for(const xx of [125,203]){x.beginPath();x.moveTo(xx,42);for(let j=0;j<len;j+=6)x.lineTo(xx+(j%12?3:-2),42+j);x.stroke();}
+ x.restore();$('fabricProgress').textContent=Math.min(8,fabric.strokes)+' / 8';
+}
+function finishFabric(){
+ if(!state.cleanup.cutting)return;state.cleanup.cutting=0;state.cleanup.prepared=true;$('cut03').hidden=true;fabric.lastY=null;saveCleanup();requestLock();
+ say([G('Я смотрел только на ткань. Теперь у стены три свёртка.'),S('По одному. На отметку в кладовой.')]);
+}
+$('skipFabric').onclick=()=>{if(!state.paused)finishFabric();};
+
+/* ---------- часть 04: сценарный визит и дневник ---------- */
+const P=t=>[t,'p',3800];
+const visitRoute=[
+ {area:'hall',path:[[9.95,1.6],[9.4,2],[8.9,1.8]],lines:[P('Это Лена на фотографии?'),G('Да. То есть… фотография старая.'),P('Когда вы говорили с ней в последний раз?'),G('За ужином. Дальше я не помню.'),S('Не оборачивайся на мой голос.')]},
+ {area:'kitchen',path:[[9.8,2.8],[8.5,2.8],[7.1,2.8]],lines:[P('Здесь недавно мыли пол.'),G('Я проснулся и начал убираться.'),P('Что значит — проснулись? Сейчас почти десять вечера.'),G('Для меня было утро.')]},
+ {area:'bath',path:[[8.5,2.8],[9.9,3.8],[9.9,5.5],[9.9,6.6],[10,7.45]],lines:[P('Вода капает. Вы это слышите?'),G('Сейчас — да.'),S('Не слушай его. Слушай меня.'),G('Два голоса. Один стоит передо мной.')]},
+ {area:'living',path:[[9.9,6.6],[9.9,5.5],[9.9,2.8],[11.4,2.8],[12.7,2.8],[13.25,2.8]],lines:[P('Вы живёте один?'),G('Я… не знаю, как ответить.'),P('Это не допрос. Мне нужно понять, кто сейчас в доме.'),S('Ответь: один. Я не считаюсь.')]},
+ {area:'pantry',path:[[13.7,4.8],[13.7,5.5],[13.7,6.6],[13.4,7.5]],lines:[P('Что в этих коробках?'),G('Старые домашние записи. Я ещё не смотрел их.'),S('Не открывай ящик при нём.'),G('Почему? Что на этих записях?'),P('Простите? Вы меня спрашиваете?'),G('Нет. Я задумался.')],},
+ {area:'leave',path:[[13.7,6.6],[13.7,5.5],[13.7,2.8],[11.1,2.8],[10.15,1.55]],lines:[P('Я вернусь утром. Исчезновение Лены всё ещё не объяснено.'),P('Если снова будет провал в памяти — не оставайтесь с этим один. Позвоните мне или врачу.'),G('А если со мной уже кто-то есть?'),P('Тем более позвоните.')]}
+];
+function cleanupSnapshot(){const c=state.cleanup;return {knife:!!c.knife,prepared:!!c.prepared,hiddenParts:[...(c.hiddenParts||[])],cleaned:[...c.cleaned]};}
+function loadVisitCleanup(c){
+ state.cleanup={mode:true,running:false,finished:true,remaining:0,cleaned:new Set(c.cleaned||[]),carried:null,knife:!!c.knife,prepared:!!c.prepared,hiddenParts:[...(c.hiddenParts||[])],part:null,cutting:0,bundle:(c.hiddenParts||[]).length===3};
+}
+function saveVisit(){
+ const v=state.visit;if(!v.mode||v.done)return;
+ try{localStorage.setItem('proval04checkpoint',JSON.stringify({version:1,cleanup:cleanupSnapshot(),phase:v.phase,node:v.node,x:v.x,z:v.z,answer:v.answer}));}catch(e){}
+}
+function beginVisit(fromCurrent=false,restore=false,keepPosition=false){
+ const oldCam={...cam};state.phoneRinging=false;stopPhoneSound();
+ let c=fromCurrent?cleanupSnapshot():{knife:true,prepared:true,hiddenParts:[0,1,2],cleaned:spills.map(p=>p.id)},saved=null;
+ if(!fromCurrent&&$('test04scenario').value==='dirty')c={knife:true,prepared:true,hiddenParts:[0,1,2],cleaned:spills.filter(p=>p.id!=='spill2').map(p=>p.id)};
+ if(restore)try{saved=JSON.parse(localStorage.getItem('proval04checkpoint')||'null');if(saved?.version===1)c=saved.cleanup;else saved=null;}catch(e){}
+ loadVisitCleanup(c);state.visit={mode:true,phase:'door',node:0,moving:false,x:9.95,z:-.85,answer:null,diary:null,done:false,path:[],pathIndex:0};
+ state.ended=false;state.hold=null;state.carrying=false;state.cratePlaced=false;timers.length=0;dialogue.active=false;dialogue.onDone=null;lineEl.style.opacity=0;
+ for(const id of ['result03','end04','choice04','cut03','cleanupPanel','endPanel','book04'])$(id).hidden=true;
+ $('visitStatus').hidden=false;state.doorOpen=state.livingOpen=state.bathOpen=state.pantryOpen=true;
+ if(state.paused)pauseGame(false);Object.assign(cam,{x:10.15,z:2.2,yaw:Math.PI,pitch:0});
+ if(saved){const v=state.visit;v.phase=['door','inspection','diary'].includes(saved.phase)?saved.phase:'door';v.node=clamp(saved.node|0,0,5);v.answer=saved.answer||null;v.x=Number.isFinite(saved.x)?saved.x:10.8;v.z=Number.isFinite(saved.z)?saved.z:4.3;
+  if(v.phase==='diary')Object.assign(cam,{x:4.5,z:2.7,yaw:-Math.PI/2});else if(v.phase==='inspection'){
+   const near={x:v.x,z:v.z+1.1};if(!blocked(near.x,near.z))Object.assign(cam,near);}
+  say([G('Я помню этот стук. Разговор ещё не закончен.')]);
+ }else{burst({dur:.15,freq:130,gain:.17});burst({dur:.15,freq:130,gain:.17,when:.4});burst({dur:.15,freq:130,gain:.17,when:.8});say([G('Три удара. Он пришёл.'),P('Глеб Сергеевич? Полиция. Откройте, пожалуйста.'),S('Теперь я буду молчать. Почти.')]);}
+ if(keepPosition)Object.assign(cam,oldCam);saveVisit();refreshObjective();
+}
+const diaryEntries=[
+ 'Я ничего не помню за последние три дня. Сегодня пришёл полицейский. Он спросил о Лене. Я не смог вспомнить наш последний разговор.',
+ 'Мне кажется, в доме есть кто-то ещё. Я слышу его голос, но полицейский его не слышал. Завтра я проверю, повторится ли это.',
+ 'Я называю этот голос Сторожем. Он говорит, будто знает меня давно. Я записываю это, чтобы утром не решить, что мне приснилось.'
+];
+const choices04={
+ interview:{label:'ПОЛИЦЕЙСКИЙ · ПЕРВЫЙ ВОПРОС',title:'«Что с вами произошло за последние три дня?»',items:['Я ничего не помню. Мне нужна помощь.','Я только проснулся. Не понимаю, что происходит.','Мне кажется, в доме есть кто-то ещё.','Я убил Лену.','Лена мертва. Больше я ничего не скажу.']},
+ knowledge:{label:'ПОЛИЦЕЙСКИЙ · УТОЧНЕНИЕ',title:'«Вы сказали: мертва. Откуда вы это знаете?»',items:['Я видел её здесь. Я знаю, что сделал.','Я не уверен. Я путаю сон и то, что было на самом деле.','Потому что это сделал я.']},
+ diary:{label:'ДНЕВНИК · СОХРАНИТЬ ВОСПОМИНАНИЕ',title:'Что Глеб запишет для себя на утро?',items:['Зафиксировать провал в памяти.','Записать, что голос слышит только Глеб.','Впервые записать имя «Сторож».']}
+};
+function showChoice04(kind){
+ const cfg=choices04[kind];if(!cfg)return;
+ state.visit.choice=kind;pauseGame(true);$('overlay').style.display='none';$('choice04').hidden=false;
+ $('choice04label').textContent=cfg.label;$('choice04title').textContent=cfg.title;
+ $('choice04buttons').replaceChildren();cfg.items.forEach((label,i)=>{const button=document.createElement('button');button.textContent=label;button.onclick=()=>choose04(i);$('choice04buttons').appendChild(button);});
+ if(kind==='diary'){const p=document.createElement('p');p.className='foot';p.textContent='Это не проверка правильного ответа. Запись сохранит выбранное воспоминание Глеба.';$('choice04buttons').appendChild(p);}
+}
+function detainFromAnswer(reason){
+ state.visit.detainReason=reason;
+ say([P('Это серьёзное заявление. Я вызываю группу. Вам придётся поехать со мной.'),G('Я произнёс это вслух. Назад уже не забрать.'),S('Я просил тебя молчать.')],false,()=>finishVisit(false));
+}
+function continueInterview(i){
+ const replies=[P('Спасибо, что сказали. Сначала убедимся, что здесь никому не нужна срочная помощь.'),P('Хорошо. Не спешите. Покажете дом?'),P('Если здесь есть другой человек, мы должны его найти.')];
+ say([replies[i]||replies[0],S('Не произноси моё имя.')],false,()=>startVisitNode(0));
+}
+function choose04(i){
+ const kind=state.visit.choice,cfg=choices04[kind];if(!cfg||i<0||i>=cfg.items.length)return;
+ $('choice04').hidden=true;state.visit.choice=null;pauseGame(false);
+ if(kind==='interview'){state.visit.answer=i;
+  if(i===3){detainFromAnswer('Глеб признался полицейскому в убийстве Лены.');return;}
+  if(i===4){say([P('Погодите. Я говорил только о том, что Лена пропала.')],false,()=>showChoice04('knowledge'));return;}
+  continueInterview(i);return;
+ }
+ if(kind==='knowledge'){if(i!==1){detainFromAnswer('Глеб подтвердил, что знает о смерти Лены, и признал свою причастность.');return;}continueInterview(0);return;}
+ state.visit.diary=i;
+ try{localStorage.setItem('proval04diary',JSON.stringify({entry:i,text:diaryEntries[i],alien:'Ты опять написал не то имя.'}));}catch(e){}
+ say([G('Я запишу это сейчас. Если снова забуду, у меня останется страница.'),G('Стоп. Под моей записью уже есть другая строка. Я не писал её.')],false,()=>showDiaryPage(i));
+}
+function showDiaryPage(i){pauseGame(true);$('overlay').style.display='none';$('bookEntry').textContent=diaryEntries[i];$('book04').hidden=false;}
+$('closeBook04').onclick=()=>{$('book04').hidden=true;finishVisit(true);};
+function startVisitNode(index){
+ const v=state.visit;v.phase='inspection';v.node=index;v.path=visitRoute[index].path;v.pathIndex=0;v.moving=true;
+}
+function findingAt(area){
+ const c=state.cleanup;
+ const ids={hall:['spill1','spill2','spill3'],kitchen:['spill0'],bath:['spill4'],living:['spill5'],pantry:[],leave:[]}[area];
+ if(ids.some(id=>!c.cleaned.has(id)))return 'На полу остался след. Полицейский останавливается и достаёт рацию.';
+ if(area==='kitchen'&&c.hiddenParts.length<3)return 'У стены осталось то, чего Глеб не хотел замечать. Полицейский больше не задаёт прежних вопросов.';
+ return null;
+}
+function interactVisit(o){
+ const v=state.visit;if(v.done)return;
+ if(o.id==='entry04'&&v.phase==='door'){
+  say([P('Можно войти?'),G('Я открыл тяжёлую входную дверь. С крыльца потянуло холодом.')],false,()=>{v.phase='entering';v.x=9.95;v.z=-.85;v.path=[[9.95,.65],[9.95,1.55]];v.pathIndex=0;v.moving=true;});return;
+ }
+ if(o.id==='officer04'&&v.phase==='inspection'&&!v.moving){
+  const r=visitRoute[v.node],finding=findingAt(r.area);
+  if(finding){say([G(finding),P('Ничего не трогайте. Вам придётся поехать со мной.'),S('Тише. Теперь ни слова.')],false,()=>finishVisit(false));return;}
+  say(r.lines,false,()=>{if(v.node<visitRoute.length-1)startVisitNode(v.node+1);else{v.phase='leaving';v.path=[[9.95,.8],[9.95,-1.1]];v.pathIndex=0;v.moving=true;}});return;
+ }
+ if(o.id==='diary04'&&v.phase==='diary')showChoice04('diary');
+}
+function updateVisit(dt){
+ const v=state.visit;if(!v.mode)return;
+ if(v.moving&&!state.paused&&!dialogue.active){const q=v.path[v.pathIndex],dx=q[0]-v.x,dz=q[1]-v.z,d=Math.hypot(dx,dz),step=dt*1.05;
+  if(d<=step){v.x=q[0];v.z=q[1];v.pathIndex++;if(v.pathIndex>=v.path.length){v.moving=false;
+   if(v.phase==='entering'){v.phase='interview';say([G('Он вошёл. На коврике остались мокрые следы.'),P('Начнём с простого.')],false,()=>showChoice04('interview'));}
+   else if(v.phase==='leaving'){v.phase='diary';say([G('Я закрыл за ним входную дверь. Он ушёл на улицу.'),G('Я снова начинаю путать порядок событий. Нужен дневник — запишу, пока это не исчезло.'),S('Пиши. Я посмотрю.')]);}
+   saveVisit();}}
+  else{v.x+=dx/d*step;v.z+=dz/d*step;}
+ }
+ const dx=cam.x-v.x,dz=cam.z-v.z,d=Math.hypot(dx,dz)||1,rx=dz/d*.40,rz=-dx/d*.40;
+ officerFace.P=[[v.x-rx,0,v.z-rz],[v.x+rx,0,v.z+rz],[v.x+rx,1.85,v.z+rz],[v.x-rx,1.85,v.z-rz]];
+ const o=OBJ.find(o=>o.id==='officer04');o.x=v.x;o.z=v.z;
+}
+function finishVisit(success){
+ if(success){state.visit.done=true;state.visit.mode=false;try{localStorage.removeItem("proval04checkpoint");}catch(e){}beginArc(5);return;}
+ const v=state.visit;v.done=true;v.phase='done';v.moving=false;state.ended=true;dialogue.active=false;lineEl.style.opacity=0;pauseGame(true);$('overlay').style.display='none';$('choice04').hidden=true;$('end04').hidden=false;
+ $('book04').hidden=true;$('end04title').textContent=success?'Запись осталась.':'Протокол.';
+ $('end04text').textContent=success?'Полицейский ушёл, но обещал вернуться. Запись в дневнике сохранена. Под вашим почерком появилась чужая строка. Первая ночь завершена. Наступает следующий вечер.':'В доме осталось то, что полицейский не смог проигнорировать. Допросная. На стене две тени, хотя напротив сидит один человек. Можно повторить визит с тем же состоянием дома или заново пройти уборку.';
+ if(!success&&v.detainReason)$('end04text').textContent=v.detainReason+' Полицейский задержал его для расследования. Игра окончена — «Протокол». Можно повторить визит.';
+ try{localStorage.removeItem('proval04checkpoint');localStorage.setItem('proval04result',JSON.stringify({success,answer:v.answer,diary:v.diary}));}catch(e){}
+}
+OBJ.unshift(
+ {id:'entry04',x:9.95,z:.08,r:2.0,label:'открыть полицейскому',visit:true,enabled:()=>state.visit.phase==='door'},
+ {id:'officer04',x:10.8,z:4.3,r:2.3,label:'поговорить с полицейским',visit:true,enabled:()=>state.visit.phase==='inspection'&&!state.visit.moving},
+ {id:'diary04',x:2.55,z:2.62,r:2.0,label:'запись в дневнике',visit:true,enabled:()=>state.visit.phase==='diary'}
+);
+$('start04').onclick=()=>{if(!state.started)startGame(true);beginVisit(false);};
+$('resume04').onclick=()=>{if(!state.started)startGame(true);beginVisit(false,true);};
+$('next04').onclick=()=>beginVisit(true);
+$('retry04').onclick=()=>beginVisit(true);
+$('back03').onclick=()=>{pauseGame(false);beginCleanup(false);};
+$('free04').onclick=()=>{$('end04').hidden=true;pauseGame(false);};
+try{const c=JSON.parse(localStorage.getItem('proval04checkpoint')||'null');$('resume04').hidden=c?.version!==1;}catch(e){}
+
+/* ---------- управление и коллизии ---------- */
+const keys={};
+const COL=[[0.1,5.25,4.95,6.0],[5.1,5.3,6.0,6.0],[6.35,5.15,7.5,6.0],[1.75,2.05,3.45,3.15],[5.4,.30,7.85,1.83],[8.15,4.05,8.75,5.55],[11.4,.8,12,2]],PRAD=0.28;
+function blocked(x,z){
+  if(boundaryBlocked(x,z,PRAD))return true;
+  const extra=[];if(arc.active)extra.push([14.225,5.175,15.475,5.725],[15.975,9.025,17.825,9.675],[15.35,9.075,15.95,9.625],[15.09,6.85,15.30,8.35],[22.3,6.175,24.3,6.825],[25.075,9.75,25.825,11.45],[20.55,10.375,21.45,11.025],[24.925,6.475,25.675,7.125]);if(state.cleanup.hiddenParts?.length)extra.push([12.35,8.9,13.9,9.5]);extra.push([16.82,1.65,17.9,4.35],[15.12,2.35,15.98,3.65],[13.3,.08,14.9,.76],[8.17,7.32,9.24,9.48],[11.16,7.87,11.86,8.83],[14.42,6.95,14.98,9.57]);
+  if(!state.cleanup.mode&&!state.carrying&&!state.cratePlaced)extra.push([13.49,3.625,14.11,4.175]);
+  if(!state.cleanup.mode&&state.cratePlaced)extra.push([13.19,8.375,13.81,8.925]);
+  for(const c of extra)if(x>c[0]-PRAD&&x<c[2]+PRAD&&z>c[1]-PRAD&&z<c[3]+PRAD)return true;
+  for(const c of COL)if(!(c[0]===5.4&&state.cleanup.prepared)&&x>c[0]-PRAD&&x<c[2]+PRAD&&z>c[1]-PRAD&&z<c[3]+PRAD)return true;
+  // Круг игрока против повёрнутого прямоугольника стула.
+  for(const c of chairColliders){
+    const dx=x-c.cx,dz=z-c.cz,co=Math.cos(c.ry),sn=Math.sin(c.ry);
+    const lx=dx*co-dz*sn,lz=dx*sn+dz*co;
+    const qx=clamp(lx,-c.hx,c.hx),qz=clamp(lz,-c.hz,c.hz);
+    if((lx-qx)**2+(lz-qz)**2<PRAD*PRAD)return true;
+  }
+  return false;
+}
+function setSoft(v){state.soft=v;const c=$('soft');if(c)c.checked=v;}
+addEventListener('keydown',e=>{
+  if(e.code==='Escape'&&!$('arcSheet').hidden){closeArcSheet();return;}
+  if(arc.active&&!e.repeat){if(e.code==='KeyJ'&&!arc.media&&!arc.transition&&!dialogue.active&&!arc.hidden){e.preventDefault();if(arc.modal)closeArcSheet();else showArcJournal();return;}if(e.code==='Escape'&&arc.modal){closeArcSheet();return;}}
+  if(e.code==='Escape'){if(!$('result03').hidden||!$('endPanel').hidden||!$('choice04').hidden||!$('end04').hidden||!$('book04').hidden)return;if(state.started){pauseGame(!state.paused);}return;}
+  if(state.paused||!state.started)return;if(arc.active&&(arc.transition||arc.modal||arc.failure))return;if(state.cleanup.cutting){if(!e.repeat&&(e.code==='ArrowUp'||e.code==='ArrowDown')){fabricMotion(e.code==='ArrowUp'?-70:70);e.preventDefault();}return;}
+  if(e.code==='KeyR'&&!state.visit.mode&&state.cleanup.mode&&state.cleanup.carried&&!e.repeat){state.cleanup.carried=null;state.cleanup.part=null;state.hold=null;saveCleanup();return;}
+  if(e.code==='KeyR'&&state.carrying&&!e.repeat){if(Math.abs(cam.x-13.8)<.62&&Math.abs(cam.z-3.9)<.60){say([G('Сначала нужно отойти от места, где стоял ящик.')]);return;}state.carrying=false;state.hold=null;say([G('Оставлю ящик там, где взял.')]);return;}
+  keys[e.code]=true;
+  if((e.code==='KeyE'||e.code==='Space'||e.code==='Enter')&&!e.repeat)interact();
+  if(e.code==='KeyF'&&!e.repeat){setSoft(!state.soft);if(state.started)say([['Мягкий режим: '+(state.soft?'вкл':'выкл'),'g',1600]]);}
+  if(e.code==='KeyM'&&!e.repeat){state.muted=!state.muted;if(master)master.gain.value=state.muted?0:state.volume;}
+  if(e.code.startsWith('Arrow')||e.code==='Space')e.preventDefault();
+});
+addEventListener('keyup',e=>{keys[e.code]=false;});
+let drag=null;
+const lookBy=(dx,dy)=>{cam.yaw+=dx*0.0022*state.sensitivity;cam.pitch=clamp(cam.pitch-dy*0.0022*state.sensitivity,-1.56,1.48);};
+canvas.addEventListener('mousedown',e=>{if(state.started&&!state.paused&&e.button===0)drag={x:e.clientX,y:e.clientY};});
+addEventListener('mouseup',()=>{drag=null;});
+document.addEventListener('mousemove',e=>{
+  if(!state.started||state.paused||arcControlLock())return;
+  if(state.cleanup.cutting){const dy=document.pointerLockElement===canvas?e.movementY:(fabric.lastY===null?0:e.clientY-fabric.lastY);fabric.lastY=e.clientY;fabricMotion(dy);return;}
+  if(document.pointerLockElement===canvas){lookBy(e.movementX,e.movementY);}
+  else if(drag){lookBy(e.clientX-drag.x,e.clientY-drag.y);drag.x=e.clientX;drag.y=e.clientY;}
+});
+canvas.addEventListener('touchstart',e=>{const t=e.touches[0];if(t)drag={x:t.clientX,y:t.clientY};},{passive:true});
+canvas.addEventListener('touchmove',e=>{const t=e.touches[0];if(t&&drag&&state.started){e.preventDefault();lookBy((t.clientX-drag.x)*1.4,(t.clientY-drag.y)*1.4);drag.x=t.clientX;drag.y=t.clientY;}},{passive:false});
+canvas.addEventListener('touchend',()=>{drag=null;});
+canvas.addEventListener('click',()=>{if(state.started&&!state.paused&&document.pointerLockElement!==canvas&&canvas.requestPointerLock)requestLock();});
+
+/* ---------- логика кадра ---------- */
+function updateLamp(dt){
+  if(state.flashOn){state.flashLeft-=dt;if(state.flashLeft<=0)state.flashOn=false;}
+  state.lamp=state.soft?1:.94+.06*Math.sin(state.t*.7);
+}
+function update(dt){
+  state.t+=dt;
+  if(state.started&&!state.paused){playClock+=dt;for(let i=timers.length-1;i>=0;i--)if(timers[i].at<=playClock){const t=timers.splice(i,1)[0];t.fn();}}
+  if(state.started&&!state.paused&&!state.cleanup.cutting&&!arcControlLock()){
+    const f=(keys.KeyW?1:0)-(keys.KeyS?1:0),s=(keys.KeyD?1:0)-(keys.KeyA?1:0);
+    cam.yaw+=((keys.ArrowRight?1:0)-(keys.ArrowLeft?1:0))*1.8*dt;
+    cam.pitch=clamp(cam.pitch+((keys.ArrowUp?1:0)-(keys.ArrowDown?1:0))*1.2*dt,-1.56,1.48);
+    const fx=Math.sin(cam.yaw),fz=Math.cos(cam.yaw);
+    let dx=fx*f+fz*s,dz=fz*f-fx*s;const len=Math.hypot(dx,dz);
+    if(len>0){
+      const speed=(state.carrying||state.cleanup.carried)?1.12:1.7;dx=dx/len*speed*dt;dz=dz/len*speed*dt;
+      if(!blocked(cam.x+dx,cam.z))cam.x+=dx;if(!blocked(cam.x,cam.z+dz))cam.z+=dz;
+      state.idle=0;state.stepT-=dt;if(state.stepT<=0){sfxStep();state.stepT=0.5;}
+    }else{
+      state.idle+=dt;state.stepT=0;
+      if(state.idle>8&&Math.random()<dt*0.25){sfxPhantom();state.idle=-6;}
+    }
+    const tension=clamp(state.examined.size/10,0,1);
+    state.heartT-=dt;if(state.heartT<=0){sfxHeart();state.heartT=1.2-0.55*tension;}
+    state.nextFlash-=dt;
+    if(state.nextFlash<=0){triggerFlash();state.nextFlash=Math.max(4,9+8*Math.random()-5*tension);}
+    const o=dialogue.active?null:target();
+    if(o&&!state.hold){promptEl.textContent=(o.hold?'[УДЕРЖИВАЙТЕ E] ':o.visit||o.portal||o.id==='door'||o.id==='phone'?'[E] ':'[E] осмотреть: ')+o.label;promptEl.style.opacity=1;}else promptEl.style.opacity=0;
+    hintEl.style.display=(state.t-state.startT<14)?'block':'none';
+  }
+  if(arcControlLock())promptEl.style.opacity=0;
+  if(!state.paused)updateLamp(dt);
+  if(state.started&&!state.paused){updateDialogue();updateHold(dt);updateCleanup(dt);updateVisit(dt);updateArc(dt);}
+  refreshObjective();maybeRingPhone(dt);
+}
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000);last=now;
+  update(dt);renderScene();post();ctx.putImageData(img,0,0);requestAnimationFrame(frame);
+}
+
+/* ---------- старт, пауза и настройки ---------- */
+function requestLock(){try{const result=canvas.requestPointerLock();if(result&&result.catch)result.catch(()=>{hintEl.textContent='Захват мыши недоступен: зажмите ЛКМ и ведите. Стрелки тоже работают.';});}catch(e){}}
+function pauseGame(v){
+  state.paused=v;state.hold=null;$('holdUI').hidden=true;for(const k in keys)delete keys[k];drag=null;
+  $('arcStarts').style.display='none';$('chapterSelect').hidden=true;$('continueStory').hidden=true;$('menuGallery').hidden=true;$('playOptions').open=!!v;
+
+  $('overlay').style.display=v?'flex':'none';$('start').textContent='ПРОДОЛЖИТЬ';$('skipIntro').style.display='none';$('start03').style.display='none';$('start04').style.display='none';$('resume04').hidden=true;$('resume03').hidden=true;
+  if(v){document.exitPointerLock?.();if(ac)ac.suspend();lineEl.style.opacity=0;}
+  else{if(ac)ac.resume();if(dialogue.active)lineEl.style.opacity=1;requestLock();}
+}
+for(const id of ['brightness','sensitivity','fov','volume','textSpeed','textVolume']){
+  const el=$(id);el.addEventListener('input',()=>{const v=+el.value;if(id==='fov')cam.fov=v*Math.PI/180;else state[id]=v;
+    $(id+'Val').textContent=id==='fov'?v+'°':id==='sensitivity'?v.toFixed(1):id==='textSpeed'?v+' букв/с':Math.round(v*100)+'%';
+    if(master)master.gain.value=state.muted?0:state.volume;
+    try{localStorage.setItem('proval01settings',JSON.stringify({brightness:state.brightness,sensitivity:state.sensitivity,fov:cam.fov*180/Math.PI,volume:state.volume,soft:state.soft,textSpeed:state.textSpeed,textVolume:state.textVolume,textSound:state.textSound,autoText:state.autoText}));}catch(e){}
+  });
+}
+for(const id of ['textSound','autoText'])$(id).addEventListener('change',()=>{state[id]=$(id).checked;$('brightness').dispatchEvent(new Event('input'));if(dialogue.active&&dialogue.ready)completeLine();});
+$('soft').addEventListener('change',()=>{setSoft($('soft').checked);$('brightness').dispatchEvent(new Event('input'));});
+$('menuBtn').onclick=()=>{if(state.started)pauseGame(true);};
+function startGame(skip=false){
+  state.soft=$('soft').checked;
+  if(state.started){pauseGame(false);return;}
+  $('overlay').style.display='none';state.started=true;state.startT=state.t;
+  initAudio();if(master)master.gain.value=state.volume;if(ac)ac.resume();requestLock();
+  if(skip){state.phoneDone=false;state.phoneRinging=false;state.doorOpen=true;state.visited.add('КУХНЯ');cam.x=9.5;cam.z=2.8;cam.yaw=Math.PI/2;cam.pitch=0;say([G('Кухню я уже осмотрел. Нужно проверить остальные комнаты.'),G('Дверь напротив — гостиная. Ванная — в конце прихожей. Кладовая — через гостиную.')]);return;}
+  say([G('Лена сказала: «Не жди. Ужин остынет».',3800),G('Я помню её голос. Помню чашку на столе.',3400),G('А потом — ничего. Три дня. Ни одного утра.',4000)]);
+}
+$('start03').onclick=()=>{if(!state.started){startGame(true);}beginCleanup(false);};
+$('resume03').onclick=()=>{if(!state.started){startGame(true);}beginCleanup(true);};
+$('retry03').onclick=()=>{pauseGame(false);beginCleanup(false);};
+$('free03').onclick=()=>{$('result03').hidden=true;pauseGame(false);state.cleanup.running=false;};
+try{const c=JSON.parse(localStorage.getItem('proval031checkpoint')||'null');$('resume03').hidden=!(c&&c.version===2&&c.remaining>0);}catch(e){}
+$('start').onclick=()=>startGame(false);$('skipIntro').onclick=()=>startGame(true);
+$('continue').textContent='ПЕРЕЙТИ К ЧАСТИ 03';$('continue').onclick=()=>{$('endPanel').hidden=true;pauseGame(false);beginCleanup(false);};
+$('restart').onclick=()=>location.reload();
+addEventListener('blur',()=>{if(state.started&&!state.paused&&!state.ended)pauseGame(true);});
+document.addEventListener('pointerlockchange',()=>{for(const k in keys)delete keys[k];drag=null;});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&state.started&&!state.paused&&!state.ended)pauseGame(true);});
+try{const cfg=JSON.parse(localStorage.getItem('proval01settings')||'null');if(cfg){for(const id of ['brightness','sensitivity','fov','volume','textSpeed','textVolume'])if(Number.isFinite(cfg[id])){$(id).value=cfg[id];$(id).dispatchEvent(new Event('input'));}setSoft(cfg.soft!==false);for(const id of ['textSound','autoText'])if(typeof cfg[id]==='boolean'){state[id]=cfg[id];$(id).checked=cfg[id];}}}catch(e){}
+/* ---------- части 05–08: непрерывные ночи, улики, память ---------- */
+Object.assign(VOICES,{a:{label:'МАМА · ПЛЁНКА',speed:.9},v:{label:'ВЕРА · ЗАПИСЬ',speed:.92},l:{label:'ЛЕНА · ЗАПИСЬ',speed:1.05},n:{label:'НИНА · ЗАПИСЬ',speed:.83},m:{label:'МАКС · КАССЕТА',speed:1.08},c:{label:'МАЛЬЧИК · ЗАПИСЬ',speed:.8}});
+const V=t=>[t,'v',4400],L=t=>[t,'l',4200],N=t=>[t,'n',4400],M=t=>[t,'m',4000],C=t=>[t,'c',4000];
+const days={5:'ЧЕТВЕРГ · ВТОРАЯ НОЧЬ · 21:47',6:'ПЯТНИЦА · ТРЕТЬЯ НОЧЬ · 21:47',7:'СУББОТА · ЧЕТВЁРТАЯ НОЧЬ · 21:47'};
+const nightTitles={5:'Не показывать Глебу',6:'Кто стоит за дверью',7:'Плёнка №14'};
+const arcGoal={
+ read05:'Прочитайте вчерашнюю запись в дневнике на кухонном столе.',call05:'В прихожей звонит телефон. Ответьте.',key05:'Проверьте шкатулку в гостиной: Макс оставил под ней ключ.',tape05:'Откройте мастерскую в глубине гостиной. Осмотрите рабочий стол.',screen05:'Вставьте кассету в видеомагнитофон под телевизором в гостиной.',journal05:'Вернитесь к дневнику на кухонном столе. Нужно записать увиденное.',
+ call06:'Телефон в прихожей. Полицейский снова хочет поговорить.',exit06:'Проверьте входную дверь в прихожей.',hide:'Спрячьтесь в шкафу прихожей: у стены напротив гостиной. E — укрыться.',mirror06:'Осмотрите зеркало в ванной. На полке лежит старая кассета.',dresser06:'Проверьте комод Нины в гостиной, рядом с дверью в мастерскую.',dinner06:'Вернитесь к столу на кухне. Вспомните воскресный ужин.',journal06:'Запишите то, что теперь знаете, в дневник на кухне.',
+ music07:'Откройте шкатулку в гостиной. Она отзывается на четыре ноты.',explore07:'Ключ от подвала найден. Спуск — через мастерскую. Соберите четыре улики.',film07:'Все четыре улики найдены. Установите катушку №14 в проектор в подвале.',confront:'Сторож стоит у подножия лестницы. Подойдите и заговорите.',journal07:'Поднимитесь на кухню. Оставьте запись перед приходом Веры.',free:'Можно исследовать дом и перечитать дневник: J.'};
+const ownWords=['Мне страшно, но я хочу понять.','Я видел запись. Больше не буду делать вид, что ничего нет.','Не говори за меня.'];
+const journalReplies=['Ты всё ещё спрашиваешь. Значит, дверь не закрыта.','Ты видел не всё. Не ходи туда один.','Ты уже говорил это. Потом снова просил меня остаться.'];
+const mediaScripts={
+ surveillance:[G('Камера под потолком прихожей. Среда, 19:12. Это было до моего пробуждения.'),M('Глеб? Открой. Лена не отвечает с воскресенья.'),G('Макс входит. На нём те самые очки со стола в мастерской.'),M('Я посмотрел четырнадцатую. Нам нужно поговорить. Без Лены больше нельзя.'),G('Из кухни выходит человек. Я узнаю свою походку раньше, чем лицо.'),M('Ты слышишь меня? Что у тебя за спиной?'),G('На ленте пропуск. Несколько секунд вырезаны. Я слышу один глухой удар.'),G('Теперь камера видит пустой порог. Макса в кадре больше нет.'),G('Человек возвращается. Долго складывает очки. Так аккуратно складываю только я.'),S('Не бойся. Я за дверью.'),G('Голос на записи. Тот же голос, который сейчас у меня в голове.'),G('Он поднимает глаза к камере. Будто знает, что я буду смотреть.'),S('Тише.'),G('Это моё лицо. Я не могу больше назвать это чужим домом.')],
+ session:[V('Архив. Сеанс после происшествия. Запись сделана двадцать четыре года назад.'),V('Как тебя зовут?'),C('Глеб.'),V('А кто за дверью?'),C('Он сторожит. Чтобы никто не вернулся на кухню.'),V('Его можно позвать?'),C('Нет. Тогда я усну.'),G('Это мой детский голос. Вера знала о нём раньше меня.')],
+ dinner:[G('Воскресенье. Тот ужин, который я пытался вспомнить с первой ночи.'),L('Я подогрею чай. Ты опять весь день сидел в мастерской?'),G('У Лены красный шарф. У мамы был такой же — я вдруг это знаю.'),L('Глеб, я должна рассказать про папу. Мы слишком долго молчали.'),S('Не слушай. Она откроет дверь.'),G('Руки начинают двигаться раньше, чем я решаю встать.'),L('Тёма?.. Тёмка, это я. Посмотри на меня.'),G('Воспоминание обрывается. Только чашка на боку и погасшая лампа.'),G('Следующий кадр: угол кухни. Любимый плед Лены. Я уже знаю, что под ним.'),S('Я хотел, чтобы всё снова стало тихо.'),G('Ты убил мою сестру. Тишина ничего не исправила.')],
+ nina:[N('Лена, я сегодня скажу ему. Не надо больше ждать воскресенья.'),N('Папка в комоде. Если я снова испугаюсь — открой её сама.'),G('Я вспоминаю ночник у её кресла. Нина держит ту же папку.'),N('Завтра поедем к Вере, мальчик мой. Ты не обязан помнить это один.'),S('Спи. Я посмотрю за дверью.'),G('Дальше — только остановившиеся часы. Я не помню, как вышел из комнаты.'),G('Её смерть тоже оказалась там, куда я не хотел смотреть.')],
+ vera:[V('Вторая запись. Лена согласилась оставить плёнку у Нины.'),V('Мы называли молчание защитой. Прошли годы, а говорить правду стало только страшнее.'),V('Смена имени не стирает произошедшего. Я не должна была обещать обратное.'),V('Если он спросит — отвечайте честно. Не заставляйте его снова выбирать между памятью и семьёй.'),G('Значит, они знали. И каждый ждал, что начнёт кто-нибудь другой.')],
+ film14:[G('На коробке: «Кухня. Ноябрь». Камера на штативе; кадр остаётся неподвижным.'),G('Мама поправляет красный шарф. На краю стола две детские чашки.'),['Тёма, тише. Лена сейчас вернётся.','a',4500],G('Отец входит в кадр. Его слов не разобрать, но мама перестаёт улыбаться.'),G('Лена встаёт между ним и мальчиком. Я узнаю её, хотя она совсем юная.'),G('Они выходят за край кадра. На кухне остаётся один пустой стул.'),G('Я слышу крик. Изображение не показывает, что случилось за стеной.'),G('Мальчик возвращается к столу. У его ног длинная тень.'),G('Лента пропускает несколько кадров. Звук резко обрывается.'),G('Отец больше не входит в кадр. Мальчик стоит неподвижно.'),['Тёма. Посмотри на меня. Мы уйдём отсюда.','l',4500],G('Последние секунды: пустая кухня. Камера всё ещё на штативе.'),G('Плёнка заедает. В центре расползается тёмное пятно. Я выключаю проектор.'),S('Ты не должен был вспоминать это один.')]
+};
+function arcControlLock(){return arc.active&&(!!arc.media||arc.hidden||arc.transition>0||dialogue.active||arc.failure||!!arc.modal);}
+function groundHeight(x,z){return arc.active&&x>=18&&z>=6? -Math.min(1.8,(x-18)*.9):0;}
+function arcTone(note,delay=0,level=.09){
+ if(!ac||state.muted)return;const t=ac.currentTime+delay,o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.value=[261.63,329.63,392][note%3];g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(level,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.7);o.connect(g);g.connect(master);o.start(t);o.stop(t+.75);
+}
+function saveArc(){if(!arc.active||arc.transition||arc.failure||arc.media)return;try{localStorage.setItem('proval07checkpoint',JSON.stringify({version:1,part:arc.part,step:arc.step,found:arc.found,workshopUnlocked:arc.workshopUnlocked,cellarUnlocked:arc.cellarUnlocked,tape:arc.tape,reel:arc.reel,journal:arc.journal,lastEntry:arc.lastEntry,suspicion:arc.suspicion,finale:arc.part===8?arc.finale:null,cam:{...cam}}));}catch(e){}}
+function loadFirstDiary(){try{const d=JSON.parse(localStorage.getItem('proval04diary')||'null');return d?.text||diaryEntries[0];}catch(e){return diaryEntries[0];}}
+function resetArcUI(){closeArcSheet();closeMediaUI();for(const id of ['end04','endPanel','result03','book04','choice04','cleanupPanel','visitStatus','arcEnd','holdUI'])$(id).hidden=true;$('hideVeil').hidden=true;}
+function beginArc(part,restore=false){
+ if(part===8)return beginFinal(restore);
+ if(restore)try{if(JSON.parse(localStorage.getItem('proval07checkpoint')||'null')?.part===8)return beginFinal(true);}catch(e){}
+ $('finalDark').hidden=true;$('endingView').hidden=true;$('arcEnd').dataset.ending='';
+ for(const id of ['finalGallery','finalCredits','finalNew'])$(id).hidden=true;
+ $('arcRetry').textContent='Повторить ночь';
+
+ let saved=null;if(restore)try{saved=JSON.parse(localStorage.getItem('proval07checkpoint')||'null');if(saved?.version!==1)saved=null;}catch(e){}
+ const journal=saved?.journal||arc.journal||[],lastEntry=saved?.lastEntry??arc.lastEntry??0,suspicion=saved?.suspicion??arc.suspicion??0;
+ if(!state.started)startGame(true);if(state.paused)pauseGame(false);resetArcUI();dialogue.active=false;dialogue.onDone=null;lineEl.style.opacity=0;timers.length=0;stopPhoneSound();state.phoneRinging=false;state.phoneDone=true;state.visit.mode=false;state.cleanup.mode=false;state.cleanup.running=false;state.cleanup.prepared=true;state.cleanup.knife=true;state.cleanup.cleaned=new Set(spills.map(s=>s.id));state.cleanup.hiddenParts=[0,1,2];state.cleanup.carried=null;state.carrying=false;state.cratePlaced=true;state.ended=false;
+ Object.assign(arc,{active:true,part:saved?.part||part,step:'',found:[],workshopUnlocked:part>5,cellarUnlocked:false,tape:part>5,reel:false,journal,lastEntry,suspicion,ring:false,ringTimer:0,media:null,mediaIndex:-1,modal:null,hidden:false,hiddenCam:null,huntTime:0,threatX:11.3,threatZ:2.8,threatNode:0,breath:0,failure:false,transition:1.6,saveTimer:0,free:false});
+ arc.step=arc.part===5?'read05':arc.part===6?'call06':'music07';
+ state.doorOpen=state.livingOpen=state.bathOpen=state.pantryOpen=true;state.workshopOpen=arc.part>5;state.cellarOpen=false;
+ Object.assign(cam,{x:4.4,y:1.55,z:3.8,yaw:-Math.PI/2,pitch:-.15});
+ if(saved){for(const k of ['step','found','workshopUnlocked','cellarUnlocked','tape','reel'])if(saved[k]!==undefined)arc[k]=saved[k];if(saved.cam)Object.assign(cam,saved.cam);if(arc.step==='hide'){arc.huntTime=0;Object.assign(cam,{x:10.2,z:2.1});}state.workshopOpen=arc.workshopUnlocked;state.cellarOpen=arc.cellarUnlocked;}
+ $('nightDay').textContent=days[arc.part];$('nightTitle').textContent=nightTitles[arc.part];$('nightFade').hidden=false;$('arcStatus').hidden=false;promptEl.style.opacity=0;for(const k in keys)delete keys[k];
+}
+function finishNightFade(){
+ if(arc.part===8){finalIntro();return;}
+ $('nightFade').hidden=true;cam.y=1.55+groundHeight(cam.x,cam.z);
+ if(arc.part===5)say([G('Вчерашняя страница всё ещё открыта. Но за окном снова ночь.'),G('Четверг. Я пропустил целый день.'),S('Ты устал. Я дал тебе поспать.')],false,()=>{if(arc.step==='call05')startArcRing();saveArc();});
+ if(arc.part===6)say([G('Под моей записью ответ: «'+journalReplies[arc.lastEntry]+'»'),G('Фраза похожа на разговор. Но я разговаривал только с бумагой.')],false,()=>{if(arc.step==='call06')startArcRing();saveArc();});
+ if(arc.part===7)say([G('Суббота. Под новой записью: «Не спускайся в подвал». Вчера этой строки не было.'),G('Вера придёт завтра. Я хочу знать, о чём её спрашивать.'),S('Шкатулка помнит песню лучше тебя.')],false,saveArc);
+}
+function setArcStep(step,seq=[]){arc.step=step;if(seq.length)say(seq,false,saveArc);else saveArc();refreshObjective();}
+function startArcRing(){arc.ring=true;arc.ringTimer=4;sfxPhoneRing();}
+function showArcSheet(label,title,body,buttons=[],closable=true){
+ if(arc.media)return;arc.modal=label;promptEl.style.opacity=0;document.exitPointerLock?.();for(const k in keys)delete keys[k];
+ $('arcSheetLabel').textContent=label;$('arcSheetTitle').textContent=title;$('arcSheetBody').textContent=body;$('arcSheetButtons').replaceChildren();$('arcSheetButtons').className='';
+ for(const [txt,fn] of buttons){const b=document.createElement('button');b.textContent=txt;b.onclick=fn;$('arcSheetButtons').appendChild(b);}
+ $('arcSheetClose').hidden=!closable;$('arcSheet').hidden=false;
+}
+function closeArcSheet(){if(!$('arcSheet'))return;const done=arc.active&&arc.part===8&&arc.step==='read08'&&arc.finale?.read&&arc.modal==='ДНЕВНИК · J';$('arcSheet').hidden=true;arc.modal=null;for(const k in (typeof keys==='undefined'?{}:keys))delete keys[k];if(done)finishFinalDiary();}
+$('arcSheetClose').onclick=()=>{closeArcSheet();if(state.started)requestLock();};
+function showArcJournal(){
+ showArcSheet('ДНЕВНИК · J','Страницы, которые остались','',[]);
+ const body=$('arcSheetBody');body.replaceChildren();const entries=[{day:'СРЕДА · ПЕРВАЯ НОЧЬ',text:loadFirstDiary(),reply:'Ты опять написал не то имя.'},...arc.journal];
+ for(const e of entries){const d=document.createElement('div');d.className='journalEntry';const h=document.createElement('h3');h.textContent=e.day;const p=document.createElement('p');p.textContent=e.text;const r=document.createElement('em');r.textContent='«'+e.reply+'»';d.append(h,p,r);body.appendChild(d);}
+}
+function writeArcJournal(){
+ const part=arc.part,opts=part===5?ownWords:part===6?['Лена назвала меня Тёмой. Я хочу узнать, почему.','То, что я не помнил, всё равно произошло.','Я не позволю Сторожу отвечать за меня.']:['Меня звали Тёмой. Я не обязан снова молчать.','Завтра я попрошу Веру рассказать всё.','Я сохраню плёнку. Никто больше не решит за меня.'];
+ showArcSheet('ДНЕВНИК · '+days[part].split(' · ')[0],'Что оставить себе на следующую ночь?','Выбор сохраняет слова Глеба. Позже Сторож может повторить именно эту фразу.',opts.map((t,i)=>[t,()=>{
+  closeArcSheet();arc.lastEntry=i;arc.suspicion=clamp(arc.suspicion+(i===2?1:0),0,2);
+  const reply=part===7?'Завтра я сам открою дверь.':journalReplies[i];arc.journal=arc.journal.filter(e=>e.part!==part);arc.journal.push({part,day:days[part].split(' · 21')[0],text:t,reply});saveArc();
+  say([G('Я записал: «'+t+'»'),G(part===7?'Я оставлю страницу открытой. На этот раз я хочу увидеть, кто к ней подойдёт.':'Я оставлю дневник на столе. Пусть утром останется хоть что-нибудь.')],false,()=>part<7?beginArc(part+1):finishArcBuild());
+ }]));
+}
+function musicPuzzle(){
+ arc.notes=[];showArcSheet('ШКАТУЛКА · ЗАМОК ПОДВАЛА','Четыре ноты','Под крышкой надпись Нины: «Начало колыбельной». Нажмите «Послушать», затем повторите четыре ноты. Подсказка продублирована текстом.',[
+ ['Послушать мелодию',()=>{[0,1,2,1].forEach((n,i)=>arcTone(n,i*.55));$('arcSheetBody').textContent='До — Ми — Соль — Ми.\nПовторите с начала. Введено: '+(arc.notes.length||0)+'/4.';}],
+ ...['До · низкая','Ми · средняя','Соль · высокая'].map((name,i)=>[name,()=>{arcTone(i);arc.notes.push(i);const pat=[0,1,2,1];if(arc.notes.some((n,j)=>n!==pat[j])){arc.notes=[];$('arcSheetBody').textContent='Пружина вернулась назад. Ничего не сломалось.\nНачните заново: До — Ми — Соль — Ми.';return;}$('arcSheetBody').textContent='Введено '+arc.notes.length+'/4: '+arc.notes.map(n=>['До','Ми','Соль'][n]).join(' — ');if(arc.notes.length===4){arc.cellarUnlocked=true;closeArcSheet();setArcStep('explore07',[G('Внутри второй ключ. На бирке: «Проекционная». Значит, подвал был заперт не снаружи.'),S('Ещё можно оставить всё как есть.')]);}}])]);
+ $('arcSheetButtons').className='musicKeys';
+}
+function contactPolice(){
+ showArcSheet('ПОЛИЦЕЙСКИЙ · ТЕЛЕФОН',arc.suspicion>0?'«Вы уверены, что ничего не скрываете?»':'«Как вы себя чувствуете после нашего разговора?»',arc.suspicion>0?'«Сосед слышал ночью голоса. Я хочу понять, нужна ли кому-то помощь».':'«Если что-то вспомнили о Лене или Максиме — скажите».',[
+ ['Я нашёл запись. Мне нужна помощь, но я ещё не всё понимаю.',()=>{closeArcSheet();arc.suspicion=0;setArcStep('exit06',[P('Не уничтожайте запись. Я свяжусь с Верой Андреевной. Она знает вашу семью.'),G('Он знает Веру. Здесь все знают что-то, кроме меня.'),S('Положи трубку. Ты же хотел уйти.')]);}],
+ ['Ночью никто не приходил. Со мной всё нормально.',()=>{closeArcSheet();arc.suspicion=2;setArcStep('exit06',[P('Хорошо. Я всё равно зайду ещё раз. Если станет хуже — звоните.'),S('Вот и всё. Разговор закончен.'),G('Почему я снова повторил его слова? Мне нужно выйти из дома.')]);}],
+ ['Я убил Лену и Макса. На записи это я.',()=>{closeArcSheet();say([P('Оставайтесь на линии. Я направляю к вам сотрудников.'),G('Я сказал это вслух. Теперь кто-то другой знает.')],false,()=>showArcEnd('Протокол.','Глеб сообщил полицейскому о своей причастности. Он задержан для расследования. Эту ветку можно повторить с начала третьей ночи.',true));}]
+ ]);
+}
+function startHunt(){
+ arc.huntTime=0;arc.threatNode=0;arc.threatX=11.4;arc.threatZ=2.8;arc.hidden=false;arc.breath=0;arc.huntFoot=0;
+ setArcStep('hide',[G('Ключ повернулся. Но дверь не открылась. С той стороны — мой собственный шаг.'),S('Ты написал: «'+(arc.journal.find(e=>e.part===5)?.text||ownWords[arc.lastEntry])+'»'),S('А теперь снова хочешь закрыть глаза.'),G('Шкаф в прихожей. Если спрятаться, я смогу дослушать его шаги, не видя лица.'),G('Подойти к шкафу и нажать E. Внутри не двигаться. Shift — тихое дыхание, по желанию.')]);
+}
+function hideInWardrobe(){arc.hidden=true;arc.hiddenCam={...cam};Object.assign(cam,{x:8.72,z:4.8,yaw:Math.PI/2,pitch:0});$('hideVeil').hidden=false;for(const k in keys)delete keys[k];burst({dur:.25,freq:230,gain:.12});}
+function emergeWardrobe(){if(!arc.hidden)return;arc.hidden=false;if(arc.hiddenCam)Object.assign(cam,arc.hiddenCam);$('hideVeil').hidden=true;arc.hiddenCam=null;}
+const huntPath=[[10.2,2.8],[9.6,4.6],[10.2,2.8],[11.3,2.8],[13.5,2.8],[11.3,2.8],[9.65,4.6],[10.2,2.8]];
+function updateArc(dt){
+ if(!arc.active||!state.started||state.paused)return;
+ if(arc.transition>0){arc.transition-=dt;if(arc.transition<=0){arc.transition=0;finishNightFade();}return;}
+ cam.y=1.55+groundHeight(cam.x,cam.z);
+ if(arc.media){drawMemory();if(dialogue.index!==arc.mediaIndex){arc.mediaIndex=dialogue.index;if(arc.media==='surveillance'&&dialogue.index===12&&state.scareOn){sfxSting();arc.scareTime=.85;}if(arc.media==='film14'&&dialogue.index===12){burst({dur:.5,freq:1400,gain:state.scareOn?.13:.04});arc.scareTime=state.scareOn?.8:0;}}arc.scareTime=Math.max(0,(arc.scareTime||0)-dt);return;}
+ if(arc.part===8){updateFinal(dt);return;}
+ if(arc.modal||arc.failure)return;
+ if(arc.ring){arc.ringTimer-=dt;if(arc.ringTimer<=0){arc.ringTimer=4;sfxPhoneRing();}}
+ if(arc.part===6&&arc.step==='hide'&&!dialogue.active){
+  arc.huntTime+=dt;arc.huntFoot=(arc.huntFoot||0)-dt;if(arc.huntFoot<=0){arc.huntFoot=.72;burst({dur:.15,freq:110,gain:.12,pan:clamp((arc.threatX-cam.x)/4,-.8,.8)});}const q=huntPath[arc.threatNode%huntPath.length],dx=q[0]-arc.threatX,dz=q[1]-arc.threatZ,d=Math.hypot(dx,dz),step=dt*.8;
+  if(d<step)arc.threatNode++;else{arc.threatX+=dx/d*step;arc.threatZ+=dz/d*step;}
+  const near=Math.hypot(arc.threatX-cam.x,arc.threatZ-cam.z);
+  arc.breath=clamp(arc.breath+((keys.ShiftLeft||keys.ShiftRight)?dt:-dt*1.7),0,4);
+  if(arc.huntTime>12&&!arc.hidden&&near<1.05){showArcEnd('Он заметил тебя.','Глеб не успел укрыться. Это видение, а не конец всей истории. Повтор начнётся с третьей ночи; правила укрытия снова появятся перед сценой.',true);}
+  if(arc.huntTime>42&&!arc.hidden)showArcEnd('Негде спрятаться.','Слишком долго оставаться у голоса. Повторите ночь: шкаф находится в прихожей напротив прохода в гостиную.',true);
+  if(arc.huntTime>=26&&arc.hidden){emergeWardrobe();setArcStep('mirror06',[G('Шаги ушли в стену. Последний прозвучал у меня под ногами.'),G('Из ванной пахнет холодной водой. На зеркале что-то появилось.')]);}
+ }
+ const tx=arc.part===7?20.8:arc.threatX,tz=arc.part===7?8.5:arc.threatZ,fy=groundHeight(tx,tz),dx=cam.x-tx,dz=cam.z-tz,d=Math.hypot(dx,dz)||1,rx=dz/d*.44,rz=-dx/d*.44;
+ storFace.P=[[tx-rx,fy,tz-rz],[tx+rx,fy,tz+rz],[tx+rx,fy+2.05,tz+rz],[tx-rx,fy+2.05,tz-rz]];
+ arc.saveTimer+=dt;if(arc.saveTimer>5&&!dialogue.active){arc.saveTimer=0;saveArc();}
+}
+function arcObjective(){
+ let g=arcGoal[arc.step]||arcGoal.free;
+ if(arc.step==='explore07')g+=' Улики: '+arc.found.length+'/4.';
+ if(arc.hidden)g='Вы в шкафу. Дождитесь, пока шаги уйдут. Не двигайтесь.';
+ $('objective').textContent=g;countEl.textContent=String(arc.part).padStart(2,'0')+' / '+roomName();$('carryStatus').textContent='';$('cleanupPanel').hidden=true;$('visitStatus').hidden=true;$('arcStatus').hidden=false;
+ $('arcStatus').textContent=arc.step==='hide'?(arc.hidden?'В укрытии · '+Math.min(26,Math.floor(arc.huntTime))+'/26 с\nShift: '+(arc.breath>=4?'выдохните':Math.round(arc.breath/4*100)+'%'):'Шкаф в прихожей\nДержитесь дальше от фигуры'):arc.step==='free'?'J · дневник':arc.part===7?'Архив: '+arc.found.length+'/4\nJ · дневник':days[arc.part].split(' · 21')[0]+'\nJ · дневник';
+ $('arcStatus').style.whiteSpace='pre-line';
+}
+function interactArc(o){
+ if(arc.transition||arc.media||arc.modal||arc.failure)return;
+ if(arc.hidden){emergeWardrobe();return;}
+ if(arc.part===8){interactFinal(o);return;}
+ const id=o?.id;if(!id)return;
+ if(id==='workshopDoor'&&!arc.workshopUnlocked){say([G('Мастерская заперта. В шкатулке может быть запасной ключ.')]);return;}
+ if(id==='cellarDoor'&&!arc.cellarUnlocked){say([G('Подвал заперт. Нина держала второй ключ в музыкальной шкатулке.')]);return;}
+ if(o.portal||id==='door'){const p=portals.find(p=>p.id===id);if(!p)return;const across=p.axis==='x'?cam.x:cam.z;if(state[p.key]&&Math.abs(across-p.at)<.65){say([G('Сначала отойду от проёма.')]);return;}state[p.key]=!state[p.key];burst({dur:.2,freq:270,gain:.1});saveArc();return;}
+ if(id==='arcDiary'){
+  if(arc.step==='read05'){setArcStep('call05',[G('Моя запись: «'+loadFirstDiary()+'»'),G('Под ней ещё одна строка: «Не ходи в мастерскую». Вчера её точно не было.'),G('Пока я спал, кто-то продолжил наш разговор.')]);startArcRing();}
+  else if(/^journal/.test(arc.step))writeArcJournal();else showArcJournal();return;
+ }
+ if(id==='arcPhone'){
+  arc.ring=false;stopPhoneSound();if(arc.part===5)setArcStep('key05',[G('В трубке слышно дыхание. Потом — мой голос, будто записанный заранее.'),S('Не уходи из дома. Не показывай четырнадцатую.'),G('Щелчок. Это была запись? Кто набрал номер?'),G('Под телефоном записка Макса: «Ключ под шкатулкой. Если я не вернусь — посмотри кассету».')]);else contactPolice();return;
+ }
+ if(id==='arcMusic'){
+  if(arc.part===5&&!arc.workshopUnlocked){arc.workshopUnlocked=true;setArcStep('tape05',[G('Маленький ключ приклеен снизу. На бумажной бирке почерк Макса: «Мастерская».'),S('Он всегда трогал чужие вещи.')]);}
+  else if(arc.part===7&&!arc.cellarUnlocked)musicPuzzle();else{[0,1,2,1].forEach((n,i)=>arcTone(n,i*.55));say([G('Четыре ноты. Последняя возвращается в середину.')]);}return;
+ }
+ if(id==='arcTape'){arc.tape=true;setArcStep('screen05',[G('Очки Макса сложены рядом со сканером. На дужке свежая царапина.'),G('Кассета без названия: «Среда, 19:12». Под ней записка: «Камера в прихожей. Г. не показывать».'),S('Положи обратно.'),G('Я узнаю, что произошло с Максом.')]);return;}
+ if(id==='arcScreen'){playMedia('surveillance');return;}
+ if(id==='arcExit'){startHunt();return;}
+ if(id==='arcWardrobe'){if(arc.step==='hide')hideInWardrobe();return;}
+ if(id==='arcMirror'){playMedia('session');return;}
+ if(id==='arcDresser'){setArcStep('dinner06',[G('В комоде Нины папка. Документ о смене имени. Новое: Глеб. Старое имя затёрто, но первая буква похожа на «А».'),L('Глеб, я хотела сказать это за ужином. Про папу. Про тот вечер. Про твоё настоящее имя.'),G('Запись Лены. Она репетировала разговор со мной.'),S('Не возвращайся к столу.')]);return;}
+ if(id==='arcDinner'){playMedia('dinner');return;}
+ if(id==='arcDrawing'){arcClue('drawing',[G('Детский рисунок. Подпись: «Тёма и Сторож». Две фигуры держатся за одну дверь.'),G('Две фигуры. Но следы на полу нарисованы только у одной.')]);return;}
+ if(id==='arcReel'){arc.reel=true;arcClue('reel',[G('Катушка №14. Почерк Макса на крышке: «Г. не показывать». Края плёнки целы.'),S('Крышку ещё можно закрыть.')]);return;}
+ if(id==='arcNina'){if(!arc.found.includes('nina'))arc.found.push('nina');playMedia('nina');return;}
+ if(id==='arcVera'){if(!arc.found.includes('vera'))arc.found.push('vera');playMedia('vera');return;}
+ if(id==='arcProjector'){if(!arc.reel||arc.found.length<4){say([G('Сначала соберу записи и рисунок. Я хочу понимать, на что смотрю.')]);return;}showArcSheet('ПРОЕКТОР · КАТУШКА №14','Оставить всё закрытым или посмотреть?','Рядом лежат записи Нины и Веры. Камера снимала кухню со штатива. Я могу остановить просмотр в любой момент.',[['Включить проектор',()=>{closeArcSheet();playMedia('film14');}],['Пока не включать',()=>{closeArcSheet();requestLock();}]]);return;}
+ if(id==='arcStor'){setArcStep('journal07',[G('Тебя звали Тёмой? Или меня?'),S('Так звали нас до той ночи. Потом ты стал Глебом. А я остался за дверью.'),G('Я видел, что было с мамой. Но ты не спас Лену. И не спас Макса.'),S('Я пытался не пустить тот вечер обратно.'),G('Он уже вернулся. И молчание только продолжило его.'),S('Завтра придёт Вера. Она помнит имя.'),G('Имя не делает меня ненастоящим. Я хочу услышать правду — и никого больше не потерять.')]);return;}
+}
+function arcClue(name,seq){if(!arc.found.includes(name))arc.found.push(name);say(seq,false,()=>{if(arc.found.length===4)arc.step='film07';saveArc();});}
+function playMedia(kind){
+ arc.media=kind;arc.mediaIndex=-1;arc.scareTime=0;arc.modal=null;$('arcSheet').hidden=true;document.exitPointerLock?.();for(const k in keys)delete keys[k];
+ $('mediaLabel').textContent={surveillance:'КАМЕРА ПРИХОЖЕЙ · СР · 19:12',session:'АРХИВ ВЕРЫ · СЕАНС 01',dinner:'ВОСПОМИНАНИЕ · ВОСКРЕСНЫЙ УЖИН',nina:'СООБЩЕНИЕ НИНЫ · ДВА МЕСЯЦА НАЗАД',vera:'АРХИВ ВЕРЫ · СЕАНС 02',film14:'ПЛЁНКА №14 · КУХНЯ · ШТАТИВ'}[kind];
+ $('mediaDialogue').appendChild(lineEl);$('arcMedia').hidden=false;burst({dur:.35,freq:900,gain:.07});say(mediaScripts[kind],false,()=>finishMedia(kind));drawMemory();
+}
+function closeMediaUI(){if(!$('arcMedia'))return;$('arcMedia').hidden=true;if($('mediaDialogue').contains(lineEl))$('hud').appendChild(lineEl);arc.media=null;}
+function finishMedia(kind){
+ closeMediaUI();dialogue.active=false;lineEl.style.opacity=0;
+ if(kind==='surveillance')setArcStep('journal05',[G('Это я впустил Макса. Даже если я не помню — это было моё тело.'),G('Нужно записать, пока я снова не назвал это сном.')]);
+ if(kind==='session')setArcStep('dresser06',[G('На зеркале проступило «СПИ». Я не хочу выполнять это слово.'),G('Вера говорила о папке Нины. Комод стоит в гостиной.')]);
+ if(kind==='dinner')setArcStep('journal06',[G('Лена назвала меня Тёмой. В бумаге было другое имя. Кто решил, что мне нельзя знать?'),G('Я напишу это полностью. Не «мне приснилось». Не в этот раз.')]);
+ if(kind==='nina'||kind==='vera'){if(arc.found.length===4)arc.step='film07';saveArc();}
+ if(kind==='film14')setArcStep('confront',[G('Я выключил проектор. Но шаги на лестнице не выключились вместе с ним.'),S('Я здесь. На этот раз можешь смотреть.')]);
+ requestLock();
+}
+$('skipMedia').onclick=()=>{const kind=arc.media;if(!kind)return;dialogue.active=false;dialogue.onDone=null;finishMedia(kind);};
+function drawMemory(){
+ const c=$('memoryCanvas').getContext('2d'),w=320,h=180,k=arc.media,i=dialogue.index,t=state.t;c.fillStyle='#111a15';c.fillRect(0,0,w,h);c.imageSmoothingEnabled=false;
+ const rect=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x|0,y|0,w|0,h|0);};
+ const person=(x,y,scale=1,col='#65715c',scarf=false,glasses=false)=>{rect(x-8*scale,y,16*scale,18*scale,'#989b7b');rect(x-11*scale,y+18*scale,22*scale,39*scale,col);rect(x-9*scale,y+57*scale,7*scale,20*scale,'#26342e');rect(x+3*scale,y+57*scale,7*scale,20*scale,'#26342e');rect(x-17*scale,y+22*scale,6*scale,30*scale,col);rect(x+11*scale,y+22*scale,6*scale,30*scale,col);if(scarf)rect(x-11*scale,y+18*scale,22*scale,5*scale,'#783c35');if(glasses){rect(x-7*scale,y+6*scale,5*scale,4*scale,'#1c2420');rect(x+2*scale,y+6*scale,5*scale,4*scale,'#1c2420');rect(x-3*scale,y+7*scale,6*scale,1*scale,'#1c2420');}};
+ if(k==='surveillance'){
+  rect(18,17,284,111,'#454e3a');rect(105,30,76,92,'#15201b');rect(18,128,284,42,'#333b2e');
+  for(let y=128;y<180;y+=13)rect(18,y,284,1,'#596047');rect(230,65,49,6,'#74745a');rect(245,71,6,57,'#353f32');
+  if(i<6)person(133,58,.85,'#6e6048',false,true);if(i>=3&&i<6)person(213,61,.8,'#3c4c3b');if(i>=8&&i<12){rect(240,64,16,4,'#1a201a');person(216,58,.9,'#3d4a37');}
+  if(i>=12){rect(77,13,164,160,'#303f32');rect(107,20,108,127,'#89957a');rect(120,58,25,25,'#0a1512');rect(175,58,25,25,'#0a1512');rect(141,108,45,6,'#16241a');rect(157,94,8,52,'#929b7b');if(!state.scareOn){rect(0,0,320,180,'#101a14');c.fillStyle='#9cab91';c.font='14px monospace';c.fillText('ПАУЗА · НЕ СМОТРИ В КАМЕРУ',28,95);}}
+ }else if(k==='dinner'){
+  rect(0,0,320,135,'#645d3c');rect(0,135,320,45,'#383c2a');rect(215,25,65,65,'#192724');for(let n=0;n<4;n++)rect(215+n*16,25,2,65,'#6b7050');
+  if(i<7)person(115,48,1,'#5c6950',true);rect(48,117,229,23,'#2f5d49');rect(65,140,13,40,'#423a2a');rect(242,140,13,40,'#423a2a');rect(86,109,25,6,'#a4ad8b');rect(173,106,12,13,'#afb397');
+  if(i>=7){rect(0,0,320,180,'#080e0a');rect(99,53,122,77,'#3c4734');rect(115,72,90,41,'#747d5b');rect(157,80,3,21,'#1c281c');rect(157,99,23,3,'#1c281c');}
+ }else if(k==='film14'){
+  rect(12,12,296,156,'#68705e');rect(206,33,59,67,'#283c32');rect(52,117,212,13,'#343d2e');rect(70,130,12,38,'#313a2c');rect(238,130,12,38,'#313a2c');
+  if(i<5){person(101,50,.7,'#7d8370',true);person(165,68,.52,'#465447');if(i>2)person(256,31,1.1,'#303c32');if(i>3)person(145,44,.85,'#797f65',true);}
+  if(i>=5&&i<8){rect(115,69,24,47,'#4b5743');rect(116,67,22,6,'#8a9277');}
+  if(i>=8&&i<12)person(169,62,.64,'#6d785f');
+  if(i>=12){c.fillStyle='#070d09';c.beginPath();for(let a=0;a<Math.PI*2;a+=.15){const r=39+8*Math.sin(a*5+t*.5);c.lineTo(160+Math.cos(a)*r*1.4,88+Math.sin(a)*r);}c.fill();}
+  rect(0,0,12,180,'#06100a');rect(308,0,12,180,'#06100a');for(let y=8;y<180;y+=23){rect(3,y,5,10,'#617058');rect(312,y,5,10,'#617058');}
+ }else if(k==='nina'){
+  rect(0,0,320,180,'#1b291e');rect(39,57,54,70,'#3c5036');rect(45,48,43,10,'#899471');rect(74,12,5,33,'#9aa47d');rect(57,9,38,10,'#657b50');if(i<5){person(177,60,.8,'#63765a');rect(155,105,44,22,'#b3b58f');}else{rect(134,36,58,58,'#727e5c');rect(163,50,2,21,'#172c1b');rect(163,69,17,2,'#172c1b');}
+ }else{
+  rect(38,38,244,110,'#333f34');rect(48,49,224,90,'#78826a');for(const x of [102,220]){c.strokeStyle='#263d2d';c.lineWidth=5;c.beginPath();c.arc(x,94,27,0,Math.PI*2);c.stroke();for(let a=0;a<3;a++){let z=t*.5+a*Math.PI*2/3;rect(x+Math.cos(z)*18-3,94+Math.sin(z)*18-3,6,6,'#263d2d');}}rect(139,58,42,13,'#253d2e');rect(134,114,52,8,'#394c35');}
+ // Спокойные аналоговые полосы, без ярких вспышек.
+ for(let y=0;y<180;y+=3)rect(0,y,320,1,'#02080428');if(!state.soft){rect(0,(t*7)%180,320,1,'#a3b28b3b');}
+ c.fillStyle='#bdc6a4';c.font='8px monospace';c.fillText(k==='surveillance'?'СР 19:'+String(i<7?'12':'13'):'АРХИВ · '+String(Math.min(99,i+1)).padStart(2,'0'),17,12);
+}
+function showArcEnd(title,text,failure){
+ emergeWardrobe();closeMediaUI();closeArcSheet();arc.failure=true;arc.free=!failure;state.ended=true;dialogue.active=false;lineEl.style.opacity=0;document.exitPointerLock?.();$('arcEndLabel').textContent=failure?'ЧАСТЬ '+arc.part+' · ПОВТОР С НАЧАЛА НОЧИ':'ПРОВАЛ · РЕЗУЛЬТАТ';$('arcEndTitle').textContent=title;$('arcEndText').textContent=text;$('arcEnd').hidden=false;$('arcExplore').hidden=!!failure;$('arcReadJournal').hidden=!!failure;for(const k in keys)delete keys[k];
+}
+function finishArcBuild(){beginFinal(false);}
+$('arcRetry').onclick=()=>beginArc(arc.part);
+$('arcExplore').onclick=()=>{$('arcEnd').hidden=true;arc.failure=false;arc.step='free';state.ended=false;requestLock();};
+$('arcReadJournal').onclick=()=>showArcJournal();
+for(const p of [5,6,7])$('start0'+p).onclick=()=>beginArc(p);
+$('resumeArc').onclick=()=>beginArc(5,true);
+try{const c=JSON.parse(localStorage.getItem('proval07checkpoint')||'null');$('resumeArc').hidden=c?.version!==1;}catch(e){}
+$('scareOn').onchange=()=>{state.scareOn=$('scareOn').checked;};
+// Все сюжетные действия доступны через привычный осмотр; лишние старые реплики не перекрывают новые сцены.
+const arcObjects=[
+ {id:'arcDiary',x:2.55,z:2.62,y:.84,r:2,label:'дневник на столе',enabled:()=>arc.step!=='dinner06'},
+ {id:'arcPhone',x:11.5,z:1.4,r:1.9,label:'ответить на звонок',enabled:()=>arc.ring},
+ {id:'arcMusic',x:15.55,z:3,y:.68,r:1.9,label:'шкатулку',enabled:()=>arc.part===7||arc.step==='key05'},
+ {id:'workshopDoor',x:16.6,z:6,r:1.9,label:'открыть / закрыть мастерскую',portal:true},
+ {id:'cellarDoor',x:18,z:8.5,r:1.9,label:'открыть / закрыть подвал',portal:true,enabled:()=>arc.part>=7},
+ {id:'arcTape',x:16.9,z:9.35,y:1,r:1.9,label:'кассету и очки на рабочем столе',enabled:()=>arc.part===5&&arc.step==='tape05'},
+ {id:'arcScreen',x:14.1,z:.65,y:.95,r:1.9,label:'вставить кассету в видеомагнитофон',enabled:()=>arc.part===5&&arc.tape&&arc.step==='screen05'},
+ {id:'arcExit',x:9.95,z:.08,r:1.9,label:'проверить входную дверь',enabled:()=>arc.part===6&&arc.step==='exit06'},
+ {id:'arcWardrobe',x:8.8,z:4.8,r:1.8,label:'спрятаться в шкафу',enabled:()=>arc.part===6&&arc.step==='hide'},
+ {id:'arcMirror',x:11.85,z:8.35,r:1.9,label:'зеркало и кассету Веры',enabled:()=>arc.part===6&&arc.step==='mirror06'},
+ {id:'arcDresser',x:14.85,z:5.2,y:.9,r:1.8,label:'комод Нины',enabled:()=>arc.part===6&&arc.step==='dresser06'},
+ {id:'arcDinner',x:2.55,z:2.62,y:.85,r:2,label:'вспомнить ужин',enabled:()=>arc.part===6&&arc.step==='dinner06'},
+ {id:'arcDrawing',x:25.9,z:7.8,y:-.4,r:1.9,label:'детский рисунок',enabled:()=>arc.part===7&&!arc.found.includes('drawing')},
+ {id:'arcReel',x:25.2,z:10.6,y:-.7,r:1.9,label:'катушку №14',enabled:()=>arc.part===7&&!arc.reel},
+ {id:'arcNina',x:21,z:10.7,y:-.85,r:1.9,label:'сообщение Нины',enabled:()=>arc.part===7&&!arc.found.includes('nina')},
+ {id:'arcVera',x:25.3,z:6.8,y:-1,r:1.9,label:'вторую запись Веры',enabled:()=>arc.part===7&&!arc.found.includes('vera')},
+ {id:'arcProjector',x:23.3,z:6.5,y:-.8,r:1.9,label:'проектор',enabled:()=>arc.part===7&&['explore07','film07'].includes(arc.step)},
+ {id:'arcStor',x:20.8,z:8.5,y:-.8,r:2.6,label:'поговорить со Сторожем',enabled:()=>arc.part===7&&arc.step==='confront'}
+];
+arcObjects.forEach(o=>o.arc=true);OBJ.unshift(...arcObjects);
+
+/* ---------- Финальная ночь. Этапы 08–10: развязка, концовки, выпуск ---------- */
+VOICES.vlive={label:'ВЕРА',speed:.95};
+const VF=t=>[t,'vlive',4400];
+days[8]='ВОСКРЕСЕНЬЕ · ПЯТАЯ НОЧЬ · 21:00';nightTitles[8]='Дверь открыта';
+Object.assign(arcGoal,{
+ read08:'Прочитайте четыре предыдущие страницы дневника на кухне. Сегодня придёт Вера.',
+ door08:'Кто-то постучал. Подойдите к входной двери в прихожей.',
+ enter08:'Вера проходит в гостиную. Следуйте за ней.',
+ talk08:'Поговорите с Верой в гостиной. Теперь можно задавать вопросы.',
+ evidence08:'Возьмите папку Нины из комода в гостиной и кассету Макса со стола в мастерской.',
+ timeline08:'Вернитесь к Вере в гостиную. Сопоставьте записи по времени.',
+ blackout08:'Свет погас. Автомат на левой стене мастерской. Вера ждёт в гостиной.',
+ decision08:'Вернитесь к Вере в гостиную. Решите, что сделать с правдой.',
+ ending08:'Пятая запись завершена. Эту ночь вы больше не пропустите.'
+});
+const endingInfo={
+ name:{title:'Имя',line:'Меня зовут Артём. Я остаюсь здесь и прошу помощи.',reply:'Я слышу тебя. Но дверь открою я.',text:'Вера остаётся рядом. Вы вместе вызываете помощь и передаёте записи полицейскому. Рассвет не отменяет смерти Лены, Нины и Макса. Расследование продолжается; впереди — ответственность и помощь, а не оправдание голосом.\n\nЧерез неделю Глеб открывает дневник. На последней странице две строки. Вторую он помнит, как написал сам. Он по-прежнему слышит Сторожа, но впервые не принимает его слова за приказ.\n\n«Меня звали Артёмом. Сейчас меня зовут Глебом. Обе эти жизни — моя история».',color:'name'},
+ protocol:{title:'Протокол',line:'Я расскажу полицейскому всё, что знаю. Записи останутся целыми.',reply:'На этот раз отвечать буду я.',text:'Глеб остаётся с Верой до приезда полицейского и сообщает о своей причастности. Записи и дневник переданы следствию. Его задерживают для расследования; это не судебный приговор. Вера добивается, чтобы ему оказали необходимую помощь.\n\nВ комнате для бесед на стене одна тень. Из-за двери снова звучит: «Я здесь». Глеб отвечает: «Я знаю. Теперь говорю я».',color:'protocol'},
+ ashes:{title:'Пепел',line:'Я выбрал не смотреть. Но забыть — не значит изменить произошедшее.',reply:'Тишина тоже оставляет след.',text:'Изображение обрывается. Когда снова появляется свет, архив утрачен. Вера жива: она вышла из дома и вызвала помощь. К утру приезжает полицейский. Исчезновение плёнки не отменило ни свидетелей, ни расследования.\n\nПозже Глеб не может восстановить некоторые слова матери. Он хотел уничтожить чужую власть над памятью — и потерял часть собственной истории. В дневнике осталась пятая страница. Она не даёт назвать эту ночь сном.',color:'ashes'},
+ spectator:{title:'Зритель',line:'Я закрыл глаза и позволил голосу говорить вместо меня.',reply:'Я подожду за дверью.',text:'Глеб закрывает глаза. Разговор продолжается без него — так ему кажется. Вера не спорит с голосом и не уходит: она вызывает помощь, оставив дверь открытой.\n\nПозже он смотрит запись с камеры прихожей. В кадре всё время один человек. Ни один голос не смог вывести его из собственного тела или снять с него ответственность. Впервые он замечает кнопку «Стоп», но запись уже закончилась.',color:'spectator'}
+};
+function finalDefaults(){return {asked:[],evidence:[],order:[],phase:'waiting',x:9.95,z:-.8,node:0,moving:false,lit:true,ending:null,read:false};}
+function beginFinal(restore=false){
+ let saved=null;if(restore)try{saved=JSON.parse(localStorage.getItem('proval07checkpoint')||'null');if(saved?.part!==8)saved=null;}catch(e){}
+ const journal=saved?.journal||arc.journal||[];
+ beginArc(7,false);arc.part=8;arc.step=saved?.step||'read08';arc.journal=journal.filter(e=>saved||e.part!==8);arc.finale=Object.assign(finalDefaults(),saved?.finale||{});arc.found=saved?.found||['drawing','reel','nina','vera'];arc.workshopUnlocked=arc.cellarUnlocked=arc.tape=arc.reel=true;
+ state.workshopOpen=state.cellarOpen=true;state.cleanup.knife=true;
+ if(saved?.cam)Object.assign(cam,saved.cam);
+ if(saved&&arc.finale.moving){arc.finale.phase='inside';arc.finale.moving=false;arc.finale.x=14.1;arc.finale.z=2.8;arc.step='talk08';}
+ $('nightDay').textContent=days[8];$('nightTitle').textContent=nightTitles[8];$('nightFade').hidden=false;arc.transition=1.6;$('finalDark').hidden=arc.finale.lit;finalUpdateFigure();
+}
+function finalIntro(){
+ const f=arc.finale;$('nightFade').hidden=true;
+ if(f.ending){showFinalEnding(f.ending);return;}
+ if(arc.step==='read08')say([G('Воскресенье. На часах девять вечера. На этот раз я дождался часа сам.'),G('Четыре ночи — четыре страницы. Сегодня я напишу пятую. Если доживу до утра, я хочу помнить, как оно началось.'),S('Она опять назовёт тебя не тем именем.')],false,saveArc);
+ else say([G('Дневник открыт на последней странице. Я помню, где остановился.')],false,saveArc);
+}
+function fillMissingPages(){
+ for(const part of [5,6,7])if(!arc.journal.some(e=>e.part===part))arc.journal.push({part,day:days[part].split(' · 21')[0],text:part===5?'Я видел себя на записи с Максом. Мне страшно, но я хочу понять.':part===6?'Лена назвала меня Тёмой. То, что я не помнил, всё равно произошло.':'В подвале плёнка №14. Завтра придёт Вера. Я спрошу её сам.',reply:part===7?'Завтра я сам открою дверь.':journalReplies[0]});
+ arc.journal.sort((a,b)=>a.part-b.part);
+}
+function readFinalDiary(){
+ fillMissingPages();arc.finale.read=true;showArcJournal();$('arcSheetLabel').textContent='ЧЕТЫРЕ НОЧИ · ПЕРЕД ВСТРЕЧЕЙ';saveArc();
+}
+function finishFinalDiary(){
+ setArcStep('door08',[G('Все страницы здесь. Никаких пропавших листов.'),G('Стук. Она пришла в обещанное время.')]);
+ for(let i=0;i<3;i++)burst({dur:.10,freq:190,gain:.18,when:i*.37});
+}
+const veraPath=[[9.95,.65],[9.95,2.8],[11.35,2.8],[12.9,2.8],[14.1,2.8]];
+function openVeraDoor(){
+ const f=arc.finale;f.phase='entering';f.moving=true;f.node=0;f.x=9.95;f.z=-.7;
+ setArcStep('enter08',[VF('Глеб? Это Вера. Мы договаривались. Я войду только если ты согласен.'),G('Входите. Только не закрывайте дверь, пока я говорю.'),VF('Хорошо. Я буду в гостиной. Если захочешь остановить разговор — скажи.')]);
+}
+function veraInterview(){
+ const f=arc.finale;const questions=[
+ ['name','Почему Лена назвала меня Тёмой?',[VF('Твоё имя при рождении — Артём. После смерти матери Нина оформила смену имени. Ты просил не возвращаться в тот дом.'),VF('Взрослые решили, что молчание защитит тебя. Я поддержала это решение. Я ошиблась: новое имя не могло заменить объяснение.'),G('Глеб — не поддельный человек?'),VF('Нет. Имя не делает тебя настоящим или ненастоящим. Я должна была сказать это много лет назад.')]],
+ ['family','Что случилось с Ниной, Леной и Максом?',[VF('Нина оставила письмо перед смертью. Лена хотела вернуть тебе историю семьи. Макс нашёл запись и пришёл поговорить.'),VF('Я не была рядом в эти минуты. Не буду выдавать догадку за память. У нас есть документы, записи и твои слова — их нужно сопоставить, а затем передать следствию.'),G('Не говорить «это был кто-то другой», только потому что я не помню.'),VF('Да. И не заставлять себя заполнять пробелы выдуманными подробностями.')]],
+ ['voice','Сторож — это кто?',[VF('Я слышу только тебя. А ты описываешь голос, который появился в детстве, когда дома было страшно.'),VF('Я не буду ставить диагноз по одному разговору. Сам по себе такой опыт не делает человека опасным. Но произошедшее с твоей семьёй реально, и помощь нужна сейчас.'),S('Она хочет, чтобы ты остался один.'),G('Нет. Она сидит напротив.')]]
+ ];
+ const btn=questions.map(([key,title,seq])=>[(f.asked.includes(key)?'✓ ':'')+title,()=>{closeArcSheet();if(!f.asked.includes(key))f.asked.push(key);say(seq,false,()=>{saveArc();veraInterview();});}]);
+ btn.push(['Давайте сопоставим документы и записи.',()=>{closeArcSheet();setArcStep('evidence08',[VF('Возьми папку Нины из комода. Кассета Макса осталась на рабочем столе в мастерской. Я подожду здесь.'),G('Я могу ходить по этому дому и вернуться к живому человеку. Это непривычно.')]);}]);
+ btn.push(['Мне нужна помощь уже сейчас. Я не хочу оставаться один.',()=>{closeArcSheet();finalDecision();}]);
+ showArcSheet('ВЕРА · ГОСТИНАЯ','«Я буду отвечать, пока ты хочешь спрашивать».','Вопросы можно задать в любом порядке. Для обращения за помощью не нужно находить все предметы.',btn);
+}
+function finalEvidence(id){
+ const f=arc.finale,key=id==='finalFolder'?'folder':'tape';if(!f.evidence.includes(key))f.evidence.push(key);
+ const seq=key==='folder'?[G('Папка Нины. Свидетельство: Артём. Документ о смене имени: Глеб. Даты совпадают с детской записью Веры.'),G('В письме: «Я боялась потерять тебя ещё раз. Прости, что решила за тебя, что можно помнить».')]:[G('На кассете Макса — исходная запись прихожей. Дата: среда. На обороте коробки: «Отдать Вере». Никаких приказов спрятать её.'),G('Это не ответ на всё. Это то, с чем можно проверить мои воспоминания.')];
+ if(f.evidence.length===2){arc.step='timeline08';seq.push(VF('Я здесь. Возвращайся, разложим события по времени.'));}
+ say(seq,false,saveArc);saveArc();
+}
+const timelineFacts=[
+ {title:'Детская плёнка: старый дом и смена имени',date:'24 года назад'},
+ {title:'Нина оставляет папку и сообщение Лене',date:'Два месяца назад'},
+ {title:'Лена готовится рассказать правду за ужином',date:'Воскресенье, до первой ночи'},
+ {title:'Макс приходит к дому с кассетой',date:'Среда, 19:12'}
+];
+function timelinePuzzle(reset=true){
+ const f=arc.finale;if(reset)f.order=[];
+ const body=()=>timelineFacts.map((v,i)=>(f.order.includes(i)?'✓ ':'')+v.date+' — '+v.title).join('\n\n');
+ const refresh=()=>{
+  showArcSheet('ЗАПИСИ · НЕ ЗАМЕНЯЮТ ПАМЯТЬ','От самого раннего события к последнему',body()+'\n\nВыбрано: '+f.order.length+'/4. Даты написаны на источниках.',[...[2,0,3,1].filter(i=>!f.order.includes(i)).map(i=>[timelineFacts[i].title,()=>{
+   if(i!==f.order.length){$('arcSheetBody').textContent=body()+'\n\nЭтот источник относится к более позднему времени. Проверьте даты. Выбор не наказывается.';return;}
+   f.order.push(i);if(f.order.length===4){closeArcSheet();arc.step='blackout08';f.lit=false;$('finalDark').hidden=false;burst({dur:.25,freq:160,gain:.08});say([VF('Это последовательность источников. Она не возвращает потерянные минуты, но не позволяет менять местами причину и следствие.'),S('Вы опять открыли эту дверь.'),G('Лампа погасла. Я ещё здесь. Я вижу край стола.'),VF('Я в гостиной. Автомат в мастерской, на левой стене. Если страшно идти — мы можем сразу позвать помощь.')],false,saveArc);saveArc();}else refresh();}],),['Не продолжать проверку. Позвать помощь.',()=>{closeArcSheet();finalDecision();}]]);
+ };
+ refresh();
+}
+function finalDecision(){
+ const f=arc.finale;
+ showArcSheet('ПЯТАЯ НОЧЬ · ВЫБОР БЕЗ ТАЙМЕРА','Кто откроет дверь утром?',f.lit?'Вера остаётся в комнате. Голос Сторожа слышен, но не выбирает за вас. Это финальный выбор; следующая кнопка попросит подтверждение.':'Свет всё ещё выключен, но Вера рядом. Обратиться за помощью можно и сейчас — включать свет или собирать записи для этого не обязательно.',[
+ ['Остаться с Верой. Вызвать помощь и передать записи.',()=>confirmFinal('name')],
+ ['Сообщить полицейскому о своей причастности.',()=>confirmFinal('protocol')],
+ ['Отказаться от архива. Уничтожить записи.',()=>confirmFinal('ashes')],
+ ['Закрыть глаза. Пусть Сторож говорит вместо меня.',()=>confirmFinal('spectator')],
+ ['Мне нужно ещё время. Вернуться в комнату.',()=>{closeArcSheet();requestLock();}]
+ ]);
+}
+function confirmFinal(id){
+ const info=endingInfo[id];showArcSheet('ПОДТВЕРЖДЕНИЕ · ФИНАЛЬНОЕ РЕШЕНИЕ',info.line,id==='ashes'?'Этот выбор приведёт к утрате архива. Сцена останется за кадром. Это не отменит расследование.':id==='spectator'?'Глеб перестанет участвовать в разговоре. Вера всё равно попытается обеспечить его безопасность.':'Вы не останетесь одни. Выбор не отменяет произошедшего и ответственности за него.',[
+ ['Подтвердить это решение',()=>{closeArcSheet();completeFinal(id);}],['Нет, выбрать иначе',()=>finalDecision()]
+ ]);
+}
+function completeFinal(id){
+ const f=arc.finale,info=endingInfo[id];fillMissingPages();f.ending=id;arc.step='ending08';f.lit=true;$('finalDark').hidden=true;
+ arc.journal=arc.journal.filter(e=>e.part!==8);arc.journal.push({part:8,day:'ВОСКРЕСЕНЬЕ · ПЯТАЯ НОЧЬ',text:info.line,reply:info.reply});saveArc();
+ const seq=id==='name'?[G('Не уходите. Мне нужна помощь.'),VF('Я останусь. Телефон здесь. Мы сделаем этот звонок вместе.'),S('А я?'),G('Я слышу тебя. Но это не приказ.')]:id==='protocol'?[G('Я расскажу всё, что знаю. Не всё, что мне кажется.'),VF('Я подожду с тобой. Записи будут переданы целыми.'),P('Оставайтесь на месте. Мы едем.')]:id==='ashes'?[G('Я не хочу снова смотреть.'),VF('Тебе не обязательно смотреть сейчас. Но не решай за тех, кто уже не сможет рассказать.'),G('Дальше — провал. На этот раз я знаю, когда закрыл глаза.')]:[S('Отдохни. Я поговорю.'),VF('Глеб, я здесь. Я не оставлю тебя одного.'),G('Я слышу их издалека. Но никто не вышел из комнаты вместо меня.')];
+ say(seq,false,()=>showFinalEnding(id));
+}
+function finalUnlocked(){try{return JSON.parse(localStorage.getItem('provalEndings')||'[]').filter(k=>endingInfo[k]);}catch(e){return [];}}
+function showFinalEnding(id){
+ const info=endingInfo[id],unlocked=finalUnlocked();if(!unlocked.includes(id))unlocked.push(id);try{localStorage.setItem('provalEndings',JSON.stringify(unlocked));}catch(e){}
+ showArcEnd(info.title+'.',info.text,false);drawEnding(id);$('arcEndLabel').textContent='09 / КОНЦОВКА · '+unlocked.length+' ИЗ 4';$('arcEnd').dataset.ending=id;$('arcRetry').textContent='Повторить пятую ночь';$('arcExplore').hidden=true;$('finalGallery').hidden=false;$('finalCredits').hidden=false;$('finalNew').hidden=false;stopPhoneSound();
+}
+function finalGallery(){
+ const unlocked=finalUnlocked();showArcSheet('КОНЦОВКИ · '+unlocked.length+'/4','Четыре способа встретить утро','Все четыре финальные ветки доступны без скрытого сбора предметов. «Имя» не требует идеального прохождения.',Object.entries(endingInfo).map(([id,info])=>[unlocked.includes(id)?'✓ '+info.title:'○ Не открыта',()=>{if(!unlocked.includes(id)){ $('arcSheetBody').textContent='Эта ветка пока не открыта. Повторите пятую ночь и сделайте другой финальный выбор.';return;}showArcSheet('КОНЦОВКА · ПРОЧИТАТЬ ЕЩЁ РАЗ',info.title,info.text,[['К списку концовок',finalGallery]]);} ]));
+}
+function finalCredits(){
+ showArcSheet('10 / ТИТРЫ · ПРОВАЛ 1.0','История закончена.','Спасибо, что дошли до утра.\n\nПРОВАЛ\nАвтономный психологический хоррор\n\nСюжет, персонажи и визуальные образы — вымысел. История не описывает достоверно какое-либо психическое расстройство. Слышать голоса или иметь провалы в памяти не значит быть склонным к насилию.\n\nОтказ от насилия и обращение за помощью доступны в финале без скрытых условий. Ни одна концовка не требует самоповреждения.\n\nГрафика и звук процедурные. Реплики передаются текстом; профессиональной голосовой озвучки нет.\n\nЭтапы 01–08: история. Этап 09: четыре финальные ветки. Этап 10: настройки, доступность и автономная сборка.\n\nПять ночей. Пять записей. Один открытый порог.',[['Вернуться к концовке',closeArcSheet],['Другие концовки',finalGallery]]);
+}
+function finalUpdateFigure(){
+ if(!arc.finale)return;const f=arc.finale,tx=f.x,tz=f.z,dx=cam.x-tx,dz=cam.z-tz,d=Math.hypot(dx,dz)||1,rx=dz/d*.36,rz=-dx/d*.36;
+ veraFace.P=[[tx-rx,0,tz-rz],[tx+rx,0,tz+rz],[tx+rx,1.75,tz+rz],[tx-rx,1.75,tz-rz]];
+ const o=OBJ.find(o=>o.id==='finalVera');if(o){o.x=tx;o.z=tz;}
+}
+function updateFinal(dt){
+ const f=arc.finale;if(!f)return;cam.y=1.55+groundHeight(cam.x,cam.z);$('finalDark').hidden=f.lit||arc.failure;finalUpdateFigure();
+ if(arc.failure||arc.modal||dialogue.active)return;
+ if(f.moving){const q=veraPath[f.node];if(!q){f.moving=false;f.phase='inside';setArcStep('talk08',[VF('Я не могу вернуть тебе эти годы. Но сегодня я не стану решать за тебя, что можно знать.')]);return;}const dx=q[0]-f.x,dz=q[1]-f.z,d=Math.hypot(dx,dz),s=dt*.9;if(d<s){f.x=q[0];f.z=q[1];f.node++;}else{f.x+=dx/d*s;f.z+=dz/d*s;}f.foot=(f.foot||0)-dt;if(f.foot<0){f.foot=.6;burst({dur:.10,freq:140,gain:.055});}return;}
+ arc.saveTimer+=dt;if(arc.saveTimer>4){arc.saveTimer=0;saveArc();}
+}
+function interactFinal(o){
+ if(arc.transition||arc.modal||arc.failure)return;const id=o?.id;
+ if(o?.portal||id==='door'){const p=portals.find(p=>p.id===id);if(p&&Math.abs((p.axis==='x'?cam.x:cam.z)-p.at)<.65&&state[p.key]){say([G('Сначала отойду от проёма.')]);return;}if(p){state[p.key]=!state[p.key];burst({dur:.2,freq:270,gain:.08});}return;}
+ if(id==='arcDiary'){if(arc.step==='read08')readFinalDiary();else showArcJournal();return;}
+ if(id==='finalEntry'){openVeraDoor();return;}
+ if(id==='finalVera'){
+  if(arc.step==='timeline08')timelinePuzzle();else if(arc.step==='decision08'||arc.step==='blackout08')finalDecision();else veraInterview();return;
+ }
+ if(id==='finalFolder'||id==='finalTape'){finalEvidence(id);return;}
+ if(id==='finalFuse'){arc.finale.lit=true;$('finalDark').hidden=true;arc.step='decision08';burst({dur:.13,freq:700,gain:.08});say([G('Один щелчок. Стены снова на своих местах.'),S('Не обязательно возвращаться.'),VF('Я слышу твои шаги. Я всё ещё в гостиной.'),G('Я вернусь. И отвечу сам.')],false,saveArc);return;}
+}
+const finalObjects=[
+ {id:'finalEntry',x:9.95,z:.08,r:2,y:1.1,label:'открыть Вере',enabled:()=>arc.part===8&&arc.step==='door08'},
+ {id:'finalVera',x:14.1,z:2.8,r:2.2,y:1.35,label:'поговорить с Верой',enabled:()=>arc.part===8&&arc.finale?.phase==='inside'&&!arc.finale.moving},
+ {id:'finalFolder',x:16.3,z:5.16,r:1.9,y:.9,label:'папку Нины',enabled:()=>arc.part===8&&arc.step==='evidence08'&&!arc.finale.evidence.includes('folder')},
+ {id:'finalTape',x:17.48,z:9.19,r:1.9,y:.95,label:'кассету Макса',enabled:()=>arc.part===8&&arc.step==='evidence08'&&!arc.finale.evidence.includes('tape')},
+ {id:'finalFuse',x:15.25,z:7.1,r:1.9,y:1.35,label:'включить автомат',enabled:()=>arc.part===8&&arc.step==='blackout08'}
+];finalObjects.forEach(o=>o.arc=true);OBJ.unshift(...finalObjects);
+$('start08').onclick=()=>beginFinal(false);$('finalGallery').onclick=finalGallery;$('finalCredits').onclick=finalCredits;$('menuGallery').onclick=finalGallery;
+$('finalNew').onclick=()=>location.reload();
+$('continueStory').onclick=()=>{try{if(localStorage.getItem('proval07checkpoint')){beginArc(5,true);return;}if(localStorage.getItem('proval04checkpoint')){if(!state.started)startGame(true);beginVisit(false,true);return;}if(localStorage.getItem('proval031checkpoint')){if(!state.started)startGame(true);beginCleanup(true);return;}}catch(e){}startGame(false);};
+try{$('continueStory').hidden=!['proval07checkpoint','proval04checkpoint','proval031checkpoint'].some(k=>localStorage.getItem(k));state.scareOn=localStorage.getItem('provalScare')!=='off';$('scareOn').checked=state.scareOn;}catch(e){}
+$('scareOn').onchange=()=>{state.scareOn=$('scareOn').checked;try{localStorage.setItem('provalScare',state.scareOn?'on':'off');}catch(e){}};
+function drawEnding(id){
+ const c=$('endingView').getContext('2d');c.imageSmoothingEnabled=false;const r=(x,y,w,h,col)=>{c.fillStyle=col;c.fillRect(x,y,w,h);};
+ r(0,0,320,48,'#17261e');r(0,34,320,14,'#28392a');
+ if(id==='name'){r(125,0,70,36,'#7e9676');r(132,0,56,35,'#b2ba90');r(159,0,3,36,'#4f6851');r(132,16,56,2,'#4f6851');r(125,36,70,3,'#849675');r(209,9,4,25,'#61745d');r(197,5,27,7,'#899677');}
+ if(id==='protocol'){r(109,0,102,36,'#526254');for(let x=116;x<210;x+=15)r(x,0,3,36,'#1a2c24');r(109,22,102,3,'#1a2c24');r(60,26,34,4,'#839278');r(64,30,4,18,'#4f6352');}
+ if(id==='ashes'){r(122,22,76,15,'#4b5040');for(let i=0;i<35;i++){const x=132+(i*37)%56,y=4+(i*13)%26;r(x,y,2,2,i%2?'#93917a':'#5f6c53');}r(0,40,320,2,'#526149');}
+ if(id==='spectator'){r(105,2,110,28,'#799071');r(113,6,94,20,'#20392b');r(155,29,7,7,'#617a5f');r(139,35,40,3,'#617a5f');r(40,25,18,12,'#5f7058');r(44,19,11,9,'#929b7d');}
+ for(let y=0;y<48;y+=3)r(0,y,320,1,'#06120c32');$('endingView').hidden=false;
+}
+const startFresh=()=>{try{for(const k of ['proval07checkpoint','proval04checkpoint','proval031checkpoint','proval04diary'])localStorage.removeItem(k);}catch(e){}closeArcSheet();startGame(false);};
+$('start').onclick=()=>{if(state.started){startGame(false);return;}let exists=false;try{exists=!!localStorage.getItem('proval07checkpoint')||!!localStorage.getItem('proval04checkpoint')||!!localStorage.getItem('proval031checkpoint');}catch(e){}if(!exists){startFresh();return;}showArcSheet('НОВАЯ ИГРА','Начать историю заново?','Текущая контрольная точка будет заменена. Открытые концовки и настройки останутся.',[['Начать с первой ночи',startFresh],['Вернуться в меню',closeArcSheet]]);};
+
+requestAnimationFrame(frame);
+
+if(typeof window!=='undefined')window.__kitchen={cam,state,faces,renderScene,post,update,img,interact,target,OBJ,blocked,pauseGame,finishPart,dialogue,say,advanceDialogue,chairColliders,portals,boundaryBlocked,updateHold,roomName,keys,finishIfReady,spills,beginCleanup,cleanupResult,saveCleanup,updateCleanup,beginVisit,updateVisit,choose04,fabricMotion,finishFabric,fabric,visitRoute,finishVisit,maybeRingPhone,phoneReady,stopPhoneSound,showChoice04,showDiaryPage,diaryEntries,completeCleanupAction,entryOpen,arc,beginArc,updateArc,interactArc,arcControlLock,groundHeight,musicPuzzle,playMedia,finishMedia,writeArcJournal,showArcJournal,finishNightFade,saveArc,contactPolice,showArcEnd,beginFinal,finalIntro,interactFinal,updateFinal,finalDecision,confirmFinal,completeFinal,showFinalEnding,veraInterview,timelinePuzzle,endingInfo,finalGallery,fillMissingPages};
+})();
+</script>
+</body>
+</html>
